@@ -1,0 +1,338 @@
+# plant-operation-manager
+
+## Start here
+
+### Demo and requirements
+Everything for reviewing the solution is in [`demo-and-requirements/`](demo-and-requirements/):
+
+| File | What it is |
+|---|---|
+| [`1-Consulting_Pitch_One_Page_Final__deck.pdf`](demo-and-requirements/1-Consulting_Pitch_One_Page_Final__deck.pdf) | **The visual**: one-page pitch deck for the solution |
+| [`2-presentation_speech.pdf`](demo-and-requirements/2-presentation_speech.pdf) | **Presentation speech**: speaker notes for each stakeholder (safety, security, accuracy, closing) |
+| [`3-video_demo.mp4`](demo-and-requirements/3-video_demo.mp4) | **Video demo** of the app in use (41 s, 720p; plays in any browser) |
+| [`AI Solution Prototype Challenge.pdf`](demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf) | **Requirements**: the original challenge brief |
+
+### What's inside
+
+```
+React + TypeScript (Vite)   →  FastAPI  →  LangGraph orchestrator
+                                              ├─ Router agent      (gpt-4.1-mini)
+                                              ├─ Retrieval agent   (hybrid: Chroma vectors + BM25)
+                                              └─ Verifier agent    (gpt-4.1-mini)
+Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (queries, sessions, messages)
+```
+
+#### 1. LLM: OpenAI
+- **`gpt-4.1-mini`** powers the router and verifier agents: fast, about $0.001 per answer, temperature 0 for consistent answers.
+- **Strict JSON output** for every AI step, so responses can't drift into free-form text.
+- One wrapper (`src/rag/llm.py`) handles every OpenAI call and tracks tokens, cost and latency.
+- Swap models in `.env` (`CHAT_MODEL`, `EMBEDDING_MODEL`) without touching code.
+
+#### 2. Embedding into the vector database (Chroma)
+- `pypdf` reads the three plant PDFs. Each is split along its numbered sections into chunks of
+  about 1,200 characters, with headers and footers removed.
+- Each chunk keeps its document, section and page, so answers can cite the exact source.
+- **`text-embedding-3-small`** turns each chunk into a vector. The full set costs about $0.0003.
+- Stored locally in **Chroma** (`data/chroma/`), with one collection per source: safety (27), maintenance (33), quality (23).
+
+#### 3. RAG: answering the query
+- The question is embedded and matched against only the relevant document collections.
+- The best passages (up to 8) are passed to the AI as numbered evidence.
+- The answer is written **only from those passages**, never from the model's general knowledge.
+- Every fact is cited by document, section and page, and the answer is withheld if no source supports it.
+
+#### 4. Agentic AI: LangGraph agents
+- An **orchestrator** runs three agents and searches all sources once if the first ones have no answer.
+- **Router agent:** sends each question to safety, maintenance or quality, or declines or asks for
+  clarification. Risky tasks always include safety procedures.
+- **Retrieval agent:** searches the routed sources with hybrid search.
+- **Verifier agent:** writes the cited answer, checks every claim and flags anything uncertain ("Check before acting").
+
+#### 5. Hybrid search
+- Combines **vector search** (meaning) with **BM25 keyword search** (exact words).
+- The two rankings are merged with **Reciprocal Rank Fusion**, so passages ranked well by both rise to the top.
+- Catches exact part numbers and tags like `HP-400`, `DS-3C` and `FE-400-10` that vector-only search misses.
+- Finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78% (32 test questions).
+
+#### 6. SQL: user sessions and audit log (SQLite)
+- **`sessions`:** one active conversation per customer, which can be closed and resumed.
+- **`session_messages`:** every question and answer in a session. Keys, emails and phone numbers are redacted before saving.
+- **`queries`:** a full audit log of routes, citations, flags, confidence, cost and 👍/👎 feedback.
+- Stored locally at `data/app.db`. Tables and columns are created or upgraded automatically on startup.
+
+#### 7. Frontend: React with TypeScript
+- **React 18 + TypeScript**, built with **Vite 5**, tested with Vitest (19 tests).
+- Mobile-first, so it works on a phone on the same Wi-Fi, with light and dark mode.
+- **Ask** screen with cited answer cards and feedback. **History** screen with resumable sessions.
+- Calls FastAPI through a `/api` proxy, so the browser never talks to OpenAI directly.
+
+#### 8. Safety & security guardrails
+- **Safety first:** risky tasks (lockout, guards, chemicals) always pull in safety procedures,
+  and the supervisor gets a warning if an answer cites no safety source.
+- **Prompt-injection guardrails:** questions and document text are treated as data, not
+  instructions. A test attempt to override the rules was correctly refused.
+- **API keys stay server-side** in `.env`, never in code or the browser.
+- **No guessing:** out-of-scope questions are declined, and anything the documents don't cover gets "not found".
+
+#### 9. Testing & evaluation
+- **91 automated tests** (72 backend + 19 frontend), all mocked, so they run without an API key.
+- **Answer eval** (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.
+- **Retrieval eval** (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.
+- About **3 seconds** and **$0.001** per answer (median 2.9 s, average $0.0013).
+
+### Run the app
+You need Python 3.10+ (3.11 recommended), Node.js 18+ and your own OpenAI API key.
+
+**1. Install (once)**
+```bash
+cd plant-operation-manager
+python3.11 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cd frontend && npm install && cd ..
+```
+
+**2. Add your own LLM key (once)**
+
+The app reads keys only from a local `.env` file in the project root. It's in `.gitignore`, so
+it's never committed, and keys never reach the browser.
+1. Create an API key at https://platform.openai.com/api-keys. Your OpenAI account needs billing
+   enabled. A typical question costs about $0.001–0.002.
+2. Copy the template and open it in an editor:
+   ```bash
+   cp .env.example .env
+   ```
+3. Set these two lines in `.env`:
+   ```
+   OPENAI_API_KEY=sk-your-key-here
+   DATABASE_URL=sqlite:///data/app.db
+   ```
+4. Optional settings in `.env`:
+   - `CHAT_MODEL`: the model for the router and verifier agents. Default `gpt-4.1-mini`.
+   - `EMBEDDING_MODEL`: the embedding model. Default `text-embedding-3-small`. If you change it,
+     rebuild the index (step 3).
+   - `RETRIEVAL_MODE`: `hybrid` (default) or `vector`.
+
+To change keys later, edit `.env` and restart the backend (step 4).
+
+**3. Build the document index (once, about $0.0003)**
+
+Reads the three plant PDFs in `docs/`, embeds them with your key, and stores them locally in
+`data/chroma/`.
+```bash
+python tools/scripts/ingest_docs.py
+```
+
+**4. Run the web app (two terminals)**
+```bash
+# Terminal 1: backend (FastAPI and the LangGraph agents)
+source venv/bin/activate
+uvicorn main:app --reload --app-dir src
+
+# Terminal 2: web UI
+cd frontend
+npm run dev          # this computer only: http://localhost:5173
+npm run dev:phone    # or: also open the printed "Network" URL on a phone on the same Wi-Fi
+```
+Open the app. The dot in the header turns green when it's connected. Tap the sample question
+*"How often do we grease the conveyor bearings on Line 3?"*. The answer should say **250
+operating hours** and cite **MM-100 §4.1**.
+
+**Or ask the LLM agents from the terminal (no web server needed)**
+```bash
+source venv/bin/activate
+python tools/scripts/ask.py "What torque do the HP-400 die clamp bolts need?"
+python tools/scripts/ask.py --trace "Can I replace a machine guard while the line is running?"
+python tools/scripts/ask.py          # interactive mode; :quit to exit
+```
+
+**Troubleshooting**
+| Message | Fix |
+|---|---|
+| `OPENAI_API_KEY is not set` | Add your key to `.env` (step 2), then restart the backend |
+| `DATABASE_URL is not set` | Add `DATABASE_URL=sqlite:///data/app.db` to `.env` |
+| `Incorrect API key` / `401` | The key is wrong or revoked. Create a new one and update `.env` |
+| `insufficient_quota` / `429` | Add billing or credit to your OpenAI account |
+| Red dot / "Can't reach the server" | Terminal 1 isn't running |
+| "Document index isn't built yet" | Run step 3 |
+
+More detail: [`docs/runbooks/mobile-app.md`](docs/runbooks/mobile-app.md) (web and phone) and
+[`docs/runbooks/cli.md`](docs/runbooks/cli.md) (command line).
+
+---
+
+## About the project
+
+A question-answering assistant for manufacturing floor supervisors. A supervisor asks a question
+in plain language, the system works out which body of plant documentation should answer it
+(**safety procedures**, **maintenance manuals** or **quality control standards**), retrieves the
+relevant passages and returns an accurate, cited answer.
+
+> Status: requirements stage. The technical architecture is still to be decided. See
+> [`docs/architecture.md`](docs/architecture.md).
+
+## Problem
+Floor supervisors need fast, correct answers during a shift: how to lock out a machine, what the
+service interval is for a pump, what the acceptable tolerance is for a part. The answers exist,
+but they're spread across separate document sets owned by different teams. Searching the wrong
+set wastes time, and a wrong or outdated answer can cause injuries, equipment damage or scrap.
+
+## Users
+| User | Need |
+|---|---|
+| **Floor supervisor** (primary) | Ask a question mid-shift and get a short, trustworthy answer with the source. |
+| **Plant operator / manager** | Make sure supervisors use the approved documentation, and see what's being asked. |
+| **Document owners** (EHS, maintenance, QA) | Keep their document set current and know when answers relied on it. |
+
+## Knowledge sources
+| Source | Covers | Example question |
+|---|---|---|
+| **Safety procedures** | Lockout/tagout, PPE, hazardous materials, emergency response, permits | "What PPE do I need to clean the solvent tank?" |
+| **Maintenance manuals** | Equipment operation, service intervals, troubleshooting, parts, torque specs | "How often do we grease the conveyor bearings on Line 3?" |
+| **Quality control standards** | Specs and tolerances, inspection plans, sampling, nonconformance handling | "What's the acceptable diameter tolerance for part A-102?" |
+
+Fictional sample documents for development live in `docs/`: `safety_procedures.pdf` (EHS-SOP-001),
+`maintenance_manual.pdf` (MM-100) and `quality_control_standards.pdf` (QC-STD-200). To rebuild them, run
+`python tools/scripts/generate_sample_docs.py` (needs `reportlab` and Python 3.10+).
+
+## How it should work
+1. **Ask:** the supervisor types a question.
+2. **Route:** the system classifies the question to one source, or to more than one when it spans
+   them (e.g. "Can I replace this guard while the line runs?" touches safety and maintenance).
+3. **Retrieve:** it searches only the chosen source(s) for the relevant passages.
+4. **Answer:** it writes a concise answer grounded only in those passages.
+5. **Cite:** it shows which source was used, plus the document, section and page for each claim.
+6. **Fall back:** if the question is ambiguous, out of scope or not covered by the documents, it
+   says so (or asks a clarifying question) instead of guessing.
+
+## Functional requirements
+- **FR1 Routing:** classify each question to safety, maintenance, quality, several of these, or
+  out of scope, and show the routing decision to the user.
+- **FR2 Retrieval:** retrieve from the routed source(s) only.
+- **FR3 Grounded answers:** answer only from retrieved content, never from general model
+  knowledge.
+- **FR4 Citations:** every answer cites its source documents (document name, section, page).
+- **FR5 Safety priority:** when a question has any safety angle, include the relevant safety
+  guidance, even if the main route is maintenance or quality.
+- **FR6 Unknowns:** reply "not found in the documentation" rather than inventing an answer, and
+  ask for clarification when the question is ambiguous (e.g. which machine or line).
+- **FR7 Document ingestion:** load and re-index each document set (PDF and text) separately, so
+  each source can be updated on its own.
+- **FR8 Query log:** store questions, routes, answers and citations for review and evaluation.
+- **FR9 Feedback:** let supervisors mark an answer helpful or not helpful.
+
+## Non-functional requirements
+- **Accuracy over fluency:** a short, correct, cited answer beats a long one.
+- **Speed:** answers within a few seconds, usable on a shop-floor tablet.
+- **Traceability:** every answer can be traced back to the passages it used.
+- **Secrets:** API keys come from environment variables only (see `.env.example`).
+- **Testability:** unit tests run fully mocked with no API key. Real-API checks live in
+  `evaluation/`.
+
+## Success criteria
+| Metric | Target (initial) |
+|---|---|
+| Routing accuracy on a labelled question set | ≥ 90% |
+| Answers with correct citations | ≥ 95% |
+| Out-of-scope or uncovered questions correctly declined | ≥ 90% |
+| Median response time | ≤ 5 s |
+
+## Out of scope (first version)
+- Writing or editing the documents themselves.
+- Live machine data (sensors, MES or CMMS integrations).
+- Taking actions such as opening work orders or quality holds.
+- Multi-plant or multi-language support.
+
+## Open questions for the architecture discussion
+- Routing approach: LLM classifier, embedding similarity, rules or a hybrid, and how to handle
+  multi-source questions.
+- Index design: one vector store per source or one store with source metadata.
+- Which UI comes first (React, Streamlit or Gradio).
+- Sample documents: real plant documents, or synthetic ones for development.
+- Whether the app needs auth and roles (supervisor vs. document owner).
+
+## Stack (planned)
+UI = React (Vite + TS), Streamlit, Gradio · Backend = FastAPI (Python) · Database = SQLite ·
+LLM = OpenAI · Tests = pytest, vitest
+
+## Setup
+```bash
+python3.11 -m venv venv && source venv/bin/activate   # Python 3.10+ required
+pip install -r requirements.txt
+cp .env.example .env   # then fill in values
+cd frontend && npm install
+```
+
+## Build the vector store
+Chunks the three PDFs in `docs/` by section, embeds them with OpenAI (`text-embedding-3-small`)
+and stores them in a local Chroma database at `data/chroma/` (one collection per source:
+`safety`, `maintenance`, `quality`). Re-running rebuilds the chosen collections.
+```bash
+python tools/scripts/ingest_docs.py                  # all sources
+python tools/scripts/ingest_docs.py --source safety  # one source
+python tools/scripts/ingest_docs.py --search "How often do we grease the CV-3 bearings?"
+```
+Code: `src/rag/` (`pdf_loader.py` chunking, `llm.py` OpenAI wrapper, `vector_store.py`, `ingest.py`).
+
+Retrieval is **hybrid**: vector similarity plus BM25 keyword search, merged with Reciprocal Rank
+Fusion (`src/rag/hybrid.py`). Keyword search catches exact IDs and part numbers (HP-400, DS-3C,
+FE-400-10) that embeddings miss. Set `RETRIEVAL_MODE=vector` to compare against vector-only.
+
+## Run
+| Part | Command | URL |
+|---|---|---|
+| FastAPI backend | `uvicorn main:app --reload --app-dir src` | http://localhost:8000 (docs at `/docs`) |
+| Streamlit UI | `streamlit run app.py` (path TBD) | http://localhost:8501 |
+| Gradio UI | `python app.py` (path TBD) | http://localhost:7860 |
+| React UI (mobile-friendly) | `cd frontend && npm run dev` (`npm run dev:phone` for phones on the same Wi-Fi) | http://localhost:5173 |
+
+## React app (phone and desktop)
+Mobile-first UI in `frontend/` for supervisors: ask questions, see cited answers with flags,
+give feedback and browse history. It calls FastAPI through a `/api` proxy. Run the backend, then
+`cd frontend && npm run dev:phone` and open the printed Network URL on a phone on the same Wi-Fi.
+Full guide: [`docs/runbooks/mobile-app.md`](docs/runbooks/mobile-app.md).
+
+## Ask from the command line
+Runs the agents directly against the vector store, no server needed. Full guide:
+[`docs/runbooks/cli.md`](docs/runbooks/cli.md).
+```bash
+source venv/bin/activate
+python tools/scripts/ask.py "How often do we grease the conveyor bearings on Line 3?"
+python tools/scripts/ask.py            # interactive mode (:trace, :quit)
+python tools/scripts/ask.py --trace "..."   # show each agent's step
+```
+
+## API
+The backend needs `OPENAI_API_KEY` and `DATABASE_URL` (e.g. `sqlite:///data/app.db`) in `.env`.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/health` | Status, whether the vector store is built, and whether the answer agent is ready |
+| GET | `/sources` | The three document sources with their chunk counts |
+| POST | `/sources/ingest` | Re-index all sources or chosen ones (`{"sources": ["safety"]}`) |
+| POST | `/search` | Retrieval only: top chunks with citations (`{"question", "sources"?, "k"?}`) |
+| POST | `/ask` | Routed, cited, verified answer from the LangGraph agent (status, routes, answer, citations, flags, confidence, trace), logged to SQLite |
+| GET | `/queries`, `/queries/{id}` | Query log (FR8) |
+| POST | `/queries/{id}/feedback` | Mark an answer helpful or not (FR9) |
+
+Layout: `src/main.py` (app) → `src/api/` (routes, schemas, dependencies) → `src/services/` → `src/persistence/`
+(SQLite) and `src/rag/` (vector store). The agent plugs in through the `AnswerAgent` interface in
+`src/agents/base.py`.
+
+## Agents (LangGraph)
+An orchestrator (`src/agents/orchestrator.py`) runs three subagents:
+1. **Router** (`router.py`): classifies the question to safety, maintenance and/or quality, out of
+   scope, or needs clarification. Safety-relevant questions always include the safety source.
+2. **Retrieval** (`retrieval.py`): searches only the routed collections and returns numbered evidence.
+3. **Response verification** (`verifier.py`): writes the answer from the evidence only, cites it,
+   checks every citation and claim, and flags uncertainty.
+
+If the routed sources have no answer, the orchestrator widens the search to all sources once.
+Prompts live in `tools/prompts/`. See [`docs/architecture.md`](docs/architecture.md) for details.
+
+## Test
+- Python: `pytest`
+- React: `cd frontend && npx vitest run` (build check: `npm run build`)
+- Retrieval eval: `python evaluation/retrieval_eval.py` (32 cases; compares vector-only vs hybrid
+  search: hit rate, top-1, MRR)
+- Real-API evals: `python evaluation/run_evals.py` (18 cases in `evaluation/cases.jsonl`; scores
+  routing, status, citations, key values and declines against the success criteria above)
