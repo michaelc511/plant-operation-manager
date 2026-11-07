@@ -2,7 +2,7 @@
 
 ## Start here
 
-### Demo and requirements
+### PRODUCT PITCH, DEMO AND REQUIREMENTS
 Everything for reviewing the solution is in [`demo-and-requirements/`](demo-and-requirements/):
 
 | File | What it is |
@@ -12,7 +12,7 @@ Everything for reviewing the solution is in [`demo-and-requirements/`](demo-and-
 | [`3-video_demo.mp4`](demo-and-requirements/3-video_demo.mp4) | **Video demo** of the app in use (41 s, 720p; plays in any browser) |
 | [`AI Solution Prototype Challenge.pdf`](demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf) | **Requirements**: the original challenge brief |
 
-### What's inside
+### SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, AND SAFETY
 
 ```
 React + TypeScript (Vite)   →  FastAPI  →  LangGraph orchestrator
