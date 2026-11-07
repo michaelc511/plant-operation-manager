@@ -1,0 +1,26 @@
+# Claude (local only)
+CLAUDE.md
+.claude/skills/
+.claude/settings.local.json
+
+# Secrets
+.env
+secrets/
+
+# Python
+venv/
+.venv/
+__pycache__/
+.pytest_cache/
+*.db
+
+# Node
+node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+
+# Local vector store
+data/
+evaluation/results/
