@@ -1,0 +1,32 @@
+{"id": "grease-cv3", "question": "How often do we grease the conveyor bearings on Line 3?", "sources": ["maintenance", "safety"], "expected": [["MM-100", "4.1"], ["MM-100", "3"]]}
+{"id": "ppe-solvent", "question": "What PPE do I need to clean the solvent tank?", "sources": ["safety"], "expected": [["EHS-SOP-001", "4.2"], ["EHS-SOP-001", "7.2"]]}
+{"id": "a102-diameter", "question": "What's the acceptable diameter tolerance for part A-102?", "sources": ["quality"], "expected": [["QC-STD-200", "3.1"]]}
+{"id": "guard-running", "question": "Can I replace a machine guard while the line is running?", "sources": ["safety", "maintenance"], "expected": [["EHS-SOP-001", "6"], ["MM-100", "4.4"]]}
+{"id": "die-torque", "question": "What torque do the HP-400 die clamp bolts need?", "sources": ["maintenance", "safety"], "expected": [["MM-100", "5.4"], ["MM-100", "11"]]}
+{"id": "failed-part", "question": "What should I do with a part that fails inspection?", "sources": ["quality"], "expected": [["QC-STD-200", "8.1"], ["QC-STD-200", "8.2"], ["QC-STD-200", "8.4"]]}
+{"id": "fire-watch", "question": "How long does the fire watch have to stay after hot work?", "sources": ["safety"], "expected": [["EHS-SOP-001", "8.1"]]}
+{"id": "min-cpk", "question": "What is the minimum Cpk for critical characteristics in production?", "sources": ["quality"], "expected": [["QC-STD-200", "7.1"]]}
+{"id": "press-hot-oil", "question": "The HP-400 hydraulic oil is at 66 C. What should I do?", "sources": ["maintenance", "safety"], "expected": [["MM-100", "5.1"], ["MM-100", "10"]]}
+{"id": "sample-size", "question": "How many B-220 brackets do I sample from a lot of 400 for non-critical characteristics?", "sources": ["quality"], "expected": [["QC-STD-200", "5"]]}
+{"id": "assembly-point", "question": "Where is the evacuation assembly point?", "sources": ["safety"], "expected": [["EHS-SOP-001", "9.3"]]}
+{"id": "coolant", "question": "What coolant concentration should the CNC lathes run at?", "sources": ["maintenance"], "expected": [["MM-100", "6.2"]]}
+{"id": "die-change-fai", "question": "After a die change on the HP-400, what inspection is required before production continues?", "sources": ["quality", "maintenance", "safety"], "expected": [["QC-STD-200", "4.1"]]}
+{"id": "id-fe-400-10", "question": "FE-400-10", "sources": ["maintenance"], "expected": [["MM-100", "5.3"], ["MM-100", "12"]]}
+{"id": "id-ehs-f-07", "question": "When is form EHS-F-07 due?", "sources": ["safety"], "expected": [["EHS-SOP-001", "11"]]}
+{"id": "id-ds-3c", "question": "Where is DS-3C?", "sources": ["safety", "maintenance"], "expected": [["EHS-SOP-001", "5.3"], ["MM-100", "4.1"], ["MM-100", "4.4"]]}
+{"id": "id-hv-2", "question": "What does valve HV-2 do?", "sources": ["safety", "maintenance"], "expected": [["EHS-SOP-001", "5.3"], ["MM-100", "5"], ["MM-100", "5.4"]]}
+{"id": "id-lub-g220", "question": "Where is LUB-G220 used?", "sources": ["maintenance"], "expected": [["MM-100", "4.5"], ["MM-100", "12"]]}
+{"id": "id-ct-045", "question": "CT-045 replacement interval", "sources": ["maintenance"], "expected": [["MM-100", "9.1"], ["MM-100", "12"]]}
+{"id": "id-brg", "question": "How many BRG-UCF212 do we keep in stock?", "sources": ["maintenance"], "expected": [["MM-100", "12"]]}
+{"id": "id-o9000", "question": "When do I run program O9000?", "sources": ["maintenance"], "expected": [["MM-100", "6.3"]]}
+{"id": "id-p900", "question": "Run P900 after what?", "sources": ["maintenance"], "expected": [["MM-100", "9.2"]]}
+{"id": "id-cf-220", "question": "What is CF-220 used to check?", "sources": ["quality"], "expected": [["QC-STD-200", "3.2"]]}
+{"id": "id-lt-1", "question": "LT-1 daily check", "sources": ["quality"], "expected": [["QC-STD-200", "6"], ["QC-STD-200", "3.3"]]}
+{"id": "id-sp-1", "question": "Where is sample port SP-1 and when is it used?", "sources": ["maintenance"], "expected": [["MM-100", "5.2"]]}
+{"id": "id-safeclean", "question": "SafeClean 150 flash point", "sources": ["safety"], "expected": [["EHS-SOP-001", "7.2"]]}
+{"id": "id-iso-cleanliness", "question": "What happens if oil cleanliness is worse than ISO 18/16/13?", "sources": ["maintenance"], "expected": [["MM-100", "5.2"]]}
+{"id": "id-m8-thread", "question": "M8 x 1.25-6H thread gauge", "sources": ["quality"], "expected": [["QC-STD-200", "3.3"]]}
+{"id": "id-8d", "question": "8D corrective action deadlines", "sources": ["quality"], "expected": [["QC-STD-200", "8.5"]]}
+{"id": "id-fl-165", "question": "FL-165 fusible link rating", "sources": ["maintenance"], "expected": [["MM-100", "8.2"]]}
+{"id": "id-rw-510-gas", "question": "RW-510 shielding gas flow for porosity", "sources": ["maintenance"], "expected": [["MM-100", "10"]]}
+{"id": "id-cp-3-air", "question": "CP-3 air valve", "sources": ["safety"], "expected": [["EHS-SOP-001", "5.3"]]}

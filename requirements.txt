@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+streamlit
+gradio
+openai
+python-dotenv
+httpx
+pytest
+
+# RAG
+chromadb
+pypdf
+langgraph
