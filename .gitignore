@@ -24,3 +24,6 @@ frontend/dist/
 # Local vector store
 data/
 evaluation/results/
+
+# Video sources (commit the MP4 instead)
+*.mov
