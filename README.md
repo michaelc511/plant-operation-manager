@@ -5,7 +5,8 @@
 ## Live demo and video
 
 - 🚀 **Live demo:** [https://plant-operation-manager.fly.dev](https://plant-operation-manager.fly.dev) (opens as demo user Carl Wayne; no setup needed)
-- 🎬 **Video demo (1 min 16 s):** [https://www.youtube.com/watch?v=WV960Ni4jfc](https://www.youtube.com/watch?v=WV960Ni4jfc)
+- 📊 **Usage:** [https://plant-operation-manager.fly.dev/stats.html](https://plant-operation-manager.fly.dev/stats.html) (page views, unique visitors, questions and OpenAI cost per day)
+- 🎬 **Video demo (1 min 15 s):** [https://www.youtube.com/watch?v=WV960Ni4jfc](https://www.youtube.com/watch?v=WV960Ni4jfc)
 - 📋 **Requirements:** [the original challenge brief (PDF)](demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf)
 
 ## Presentation speech
@@ -116,7 +117,7 @@ Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (quer
   (`src/services/redact.py`) before questions and answers are saved to session history.
 
 #### 9. Testing & evaluation
-- **104 automated tests** (84 backend + 20 frontend), all mocked, so they run without an API key.
+- **109 automated tests** (88 backend + 21 frontend), all mocked, so they run without an API key.
 - **Answer eval** (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.
 - **Retrieval eval** (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.
 - About **3 seconds** and **$0.001** per answer (median 2.9 s, average $0.0013).
@@ -387,6 +388,8 @@ The backend needs `OPENAI_API_KEY` and `DATABASE_URL` (e.g. `sqlite:///data/app.
 | POST | `/sessions/active` | The last active ticket with its messages (`{"customer_id", "create"?}`; `create: false` returns null instead of opening one) |
 | POST | `/sessions/new` | Open a new ticket; the open one goes on hold |
 | POST | `/sessions/{id}/close`, `/sessions/{id}/resume` | Close a ticket, or reopen one as the active ticket |
+| POST | `/visit` | Page-load ping from the UI for visitor counts (stores a salted daily hash, never the IP) |
+| GET | `/stats` | Per-day page views, unique visitors, questions and OpenAI cost (`?days=30`); shown at `/stats.html` |
 
 Layout: `src/main.py` (app) → `src/api/` (routes, schemas, dependencies) → `src/services/` → `src/persistence/`
 (SQLite) and `src/rag/` (vector store). The agent plugs in through the `AnswerAgent` interface in

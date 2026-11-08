@@ -9,6 +9,7 @@ type Handler = (url: string, init?: RequestInit) => Response | Promise<Response>
 function mockBackend(overrides: Record<string, Handler> = {}) {
   const routes: Record<string, Handler> = {
     "/api/health": () => jsonResponse(HEALTH),
+    "/api/visit": () => new Response(null, { status: 204 }),
     "/api/ask": () => jsonResponse(ANSWER),
     "/api/queries?limit=30": () => jsonResponse([RECORD]),
     "/api/queries/7/feedback": () => jsonResponse({ ...RECORD, helpful: true }),
@@ -52,6 +53,15 @@ describe("AnswerText", () => {
 });
 
 describe("App", () => {
+  it("sends one visit ping on load", async () => {
+    const fetchMock = mockBackend();
+    render(<App />);
+    await screen.findByText("Ticket #1002");
+    const pings = fetchMock.mock.calls.filter(([u]) => u === "/api/visit");
+    expect(pings).toHaveLength(1);
+    expect(pings[0][1]).toEqual({ method: "POST" });
+  });
+
   it("shows sample questions and a connected status", async () => {
     mockBackend();
     render(<App />);

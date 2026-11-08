@@ -34,7 +34,8 @@ img{max-width:100%;height:auto;border-radius:8px}
 <h2 id="live-demo-and-video">Live demo and video</h2>
 <ul>
 <li>🚀 <strong>Live demo:</strong> <a target="_blank" rel="noopener" href="https://plant-operation-manager.fly.dev">https://plant-operation-manager.fly.dev</a> (opens as demo user Carl Wayne; no setup needed)</li>
-<li>🎬 <strong>Video demo (1 min 16 s):</strong> <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=WV960Ni4jfc">https://www.youtube.com/watch?v=WV960Ni4jfc</a></li>
+<li>📊 <strong>Usage:</strong> <a target="_blank" rel="noopener" href="https://plant-operation-manager.fly.dev/stats.html">https://plant-operation-manager.fly.dev/stats.html</a> (page views, unique visitors, questions and OpenAI cost per day)</li>
+<li>🎬 <strong>Video demo (1 min 15 s):</strong> <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=WV960Ni4jfc">https://www.youtube.com/watch?v=WV960Ni4jfc</a></li>
 <li>📋 <strong>Requirements:</strong> <a target="_blank" rel="noopener" href="demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf">the original challenge brief (PDF)</a></li>
 </ul>
 <h2 id="presentation-speech">Presentation speech</h2>
@@ -147,7 +148,7 @@ unsupported claims, and withholds any answer with no valid citation.</li>
 </ul>
 <h4>9. Testing &amp; evaluation</h4>
 <ul>
-<li><strong>104 automated tests</strong> (84 backend + 20 frontend), all mocked, so they run without an API key.</li>
+<li><strong>109 automated tests</strong> (88 backend + 21 frontend), all mocked, so they run without an API key.</li>
 <li><strong>Answer eval</strong> (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.</li>
 <li><strong>Retrieval eval</strong> (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.</li>
 <li>About <strong>3 seconds</strong> and <strong>$0.001</strong> per answer (median 2.9 s, average $0.0013).</li>
@@ -554,6 +555,16 @@ python tools/scripts/ask.py --trace &quot;...&quot;   # show each agent's step
 <td>POST</td>
 <td><code>/sessions/{id}/close</code>, <code>/sessions/{id}/resume</code></td>
 <td>Close a ticket, or reopen one as the active ticket</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/visit</code></td>
+<td>Page-load ping from the UI for visitor counts (stores a salted daily hash, never the IP)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/stats</code></td>
+<td>Per-day page views, unique visitors, questions and OpenAI cost (<code>?days=30</code>); shown at <code>/stats.html</code></td>
 </tr>
 </tbody>
 </table>

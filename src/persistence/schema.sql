@@ -59,3 +59,19 @@ CREATE INDEX IF NOT EXISTS idx_sessions_customer_active ON sessions (customer_id
 INSERT OR IGNORE INTO sessions (session_id, customer_id, status, created_at, last_active_at)
 SELECT session_id, MIN(customer_id), 'active', MIN(created_at), MAX(created_at)
 FROM session_messages GROUP BY session_id;
+
+-- Visitor counts (privacy-friendly): one row per visitor per UTC day. `visitor` is a one-way hash
+-- of the IP with a secret salt and the day, so no raw IP is stored and visitors can't be followed
+-- across days. Written by services.visits on the UI's page-load ping (POST /visit).
+CREATE TABLE IF NOT EXISTS visits (
+    day     TEXT    NOT NULL,              -- YYYY-MM-DD (UTC)
+    visitor TEXT    NOT NULL,              -- sha256(salt|day|ip), first 16 hex chars
+    views   INTEGER NOT NULL DEFAULT 1,    -- page loads by this visitor that day
+    PRIMARY KEY (day, visitor)
+);
+
+-- Small key/value settings (e.g. the visitor-hash salt, created once per database).
+CREATE TABLE IF NOT EXISTS app_meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);

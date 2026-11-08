@@ -49,6 +49,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => request<Health>("/health"),
+  // One page-load ping for visitor counts (no body; the server stores a daily hash, never the IP).
+  visit: () => fetch(`${BASE}/visit`, { method: "POST" }).then(() => undefined),
   ask: (question: string, session?: { sessionId?: string | null; customerId?: string }) =>
     request<AskResponse>("/ask", {
       method: "POST",
