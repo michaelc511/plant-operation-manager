@@ -1,18 +1,48 @@
 # plant-operation-manager
 
-## Start here
+[![Product pitch: Floor-Ready Answers. Zero Safety Compromise. One-page pitch deck for Plant Docs Assistant](demo-and-requirements/1-pitch-deck.png)](demo-and-requirements/1-Consulting_Pitch_One_Page_Final__deck.pdf)
 
-### PRODUCT PITCH, DEMO AND REQUIREMENTS
-Everything for reviewing the solution is in [`demo-and-requirements/`](demo-and-requirements/):
+## Live demo and video
 
-| File | What it is |
-|---|---|
-| [`1-Consulting_Pitch_One_Page_Final__deck.pdf`](demo-and-requirements/1-Consulting_Pitch_One_Page_Final__deck.pdf) | **The visual**: one-page pitch deck for the solution |
-| [`2-presentation_speech.pdf`](demo-and-requirements/2-presentation_speech.pdf) | **Presentation speech**: speaker notes for each stakeholder (safety, security, accuracy, closing) |
-| [`3-video_demo_RAG_and_memory.mp4`](demo-and-requirements/3-video_demo_RAG_and_memory.mp4) | **Video demo** of the app in use: RAG answers with citations and ticket memory (1 min 16 s). **▶ Watch on YouTube: [https://www.youtube.com/watch?v=WV960Ni4jfc](https://www.youtube.com/watch?v=WV960Ni4jfc)**, or download the MP4 |
-| [`AI Solution Prototype Challenge.pdf`](demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf) | **Requirements**: the original challenge brief |
+- 🚀 **Live demo:** [https://plant-operation-manager.fly.dev](https://plant-operation-manager.fly.dev) (opens as demo user Carl Wayne; no setup needed)
+- 🎬 **Video demo (1 min 16 s):** [https://www.youtube.com/watch?v=WV960Ni4jfc](https://www.youtube.com/watch?v=WV960Ni4jfc)
+- 📋 **Requirements:** [the original challenge brief (PDF)](demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf)
 
-### SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, SAFETY, GUARDRAILS AND AI GOVERNANCE
+## Presentation speech
+
+**Plant Docs Assistant · Consulting Pitch**
+
+### Speaker Notes (What You Say to the Panel)
+
+#### 1. Opening / Safety
+*Addressing the Plant Manager & EHS Lead*
+
+> "We know your top priority is keeping people safe on the floor. Supervisors are often caught between three different document sets, and hesitation or a wrong search can lead to injury or scrap. This system treats worker safety as a hard constraint: any query touching lockout, chemicals, or guards automatically pulls in safety procedures and warns supervisors before they act. If it's not in the docs, it refuses to guess."
+
+#### 2. Security
+*Addressing IT Security*
+
+> "For IT security, your proprietary plant manuals and data never leave your control. All documents and the vector database reside on your local infrastructure. The browser never talks directly to the AI provider, and prompt-injection guardrails and automatic redaction ensure complete data protection and auditability."
+
+#### 3. Accuracy & Trust
+*Addressing the Quality Lead*
+
+> "Every single answer includes clickable citations down to the exact section and page. Our hybrid search combines keyword precision with semantic understanding, matching the exact part numbers and valve tags your team uses every day, backed by a 100% routing accuracy in our test sets."
+
+#### 4. Next Steps & Closing
+*Closing the pitch*
+
+> "It delivers answers in about three seconds for a fraction of a cent. Our path to production is straightforward: we are ready to deploy an initial pilot using your actual controlled documents, letting your EHS and Quality teams review every output against the full audit log, with enterprise SSO scheduled for wider rollout."
+
+---
+
+### Key Improvements Made for the Customer
+
+- **Visual Hierarchy:** Replaced long paragraphs with punchy bullet points starting with bold action verbs/outcomes, making it immediately readable for busy executives.
+- **Audience Alignment:** Grouped features directly to speak to the pain points of the four stakeholders (Plant Manager, EHS, IT Security, Quality).
+- **Conversational Tone:** Shifted the speaker notes to sound like a confident, consultative advisor rather than an automated checklist reader.
+
+## SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, SAFETY, GUARDRAILS AND AI GOVERNANCE
 
 ```
 React + TypeScript (Vite)   →  FastAPI  →  LangGraph orchestrator
@@ -114,7 +144,7 @@ Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (quer
 - A written AI-use policy and model card (intended use, limits, owners, review cadence).
 - An eval gate in CI that blocks merges if accuracy drops.
 
-### Run the app
+## Run the app
 You need Python 3.10+ (3.11 recommended), Node.js 18+ and your own OpenAI API key.
 
 **1. Install (once)**
