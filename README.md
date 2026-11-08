@@ -9,7 +9,7 @@ Everything for reviewing the solution is in [`demo-and-requirements/`](demo-and-
 |---|---|
 | [`1-Consulting_Pitch_One_Page_Final__deck.pdf`](demo-and-requirements/1-Consulting_Pitch_One_Page_Final__deck.pdf) | **The visual**: one-page pitch deck for the solution |
 | [`2-presentation_speech.pdf`](demo-and-requirements/2-presentation_speech.pdf) | **Presentation speech**: speaker notes for each stakeholder (safety, security, accuracy, closing) |
-| [`3-video_demo.mp4`](demo-and-requirements/3-video_demo.mp4) | **Video demo** of the app in use (41 s). **▶ Watch on YouTube: [https://youtu.be/tHMchK9PRGY](https://youtu.be/tHMchK9PRGY)**, or download the MP4 |
+| [`3-video_demo_RAG_and_memory.mp4`](demo-and-requirements/3-video_demo_RAG_and_memory.mp4) | **Video demo** of the app in use: RAG answers with citations and ticket memory (1 min 16 s). **▶ Watch on YouTube: [https://www.youtube.com/watch?v=WV960Ni4jfc](https://www.youtube.com/watch?v=WV960Ni4jfc)**, or download the MP4 |
 | [`AI Solution Prototype Challenge.pdf`](demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf) | **Requirements**: the original challenge brief |
 
 ### SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, SAFETY, GUARDRAILS AND AI GOVERNANCE
