@@ -104,16 +104,23 @@ clarification. Risky tasks always include safety procedures.</li>
 </ul>
 <h4>6. SQL: user sessions and audit log (SQLite)</h4>
 <ul>
-<li><strong><code>sessions</code>:</strong> one active conversation per customer, which can be closed and resumed.</li>
+<li><strong><code>sessions</code>:</strong> one conversation per ticket. Users see a ticket number (#1001, #1002, …) instead
+of the session ID, and a state: <strong>Open</strong> (the one active ticket), <strong>On hold</strong> (switched away from),
+<strong>Escalated</strong>, <strong>Resolved</strong> or <strong>Closed</strong>. Returning users get their last active ticket back.</li>
+<li><strong>Demo tickets:</strong> on first run (empty <code>sessions</code> table) Carl Wayne gets five tickets, #1001 Open
+through #1005 Closed, with real agent answers from <code>src/persistence/demo_tickets.json</code>.
+Set <code>DEMO_TICKETS=0</code> to skip.</li>
 <li><strong><code>session_messages</code>:</strong> every question and answer in a session. Keys, emails and phone numbers are redacted before saving.</li>
 <li><strong><code>queries</code>:</strong> a full audit log of routes, citations, flags, confidence, cost and 👍/👎 feedback.</li>
 <li>Stored locally at <code>data/app.db</code>. Tables and columns are created or upgraded automatically on startup.</li>
 </ul>
 <h4>7. Frontend: React with TypeScript</h4>
 <ul>
-<li><strong>React 18 + TypeScript</strong>, built with <strong>Vite 5</strong>, tested with Vitest (19 tests).</li>
+<li><strong>React 18 + TypeScript</strong>, built with <strong>Vite 5</strong>, tested with Vitest (20 tests).</li>
 <li>Mobile-first, so it works on a phone on the same Wi-Fi, with light and dark mode.</li>
-<li><strong>Ask</strong> screen with cited answer cards and feedback. <strong>History</strong> screen with resumable sessions.</li>
+<li><strong>Ask</strong> screen with the signed-in customer (demo: Carl Wayne, read-only customer ID), the open
+ticket and its state (<strong>Close ticket</strong>, <strong>New ticket</strong>), cited answer cards and feedback.
+<strong>History</strong> screen with every other ticket and its state, each with <strong>Reopen</strong>.</li>
 <li>Calls FastAPI through a <code>/api</code> proxy, so the browser never talks to OpenAI directly.</li>
 </ul>
 <h4>8. AI guardrails (safety &amp; security)</h4>
@@ -131,7 +138,7 @@ unsupported claims, and withholds any answer with no valid citation.</li>
 </ul>
 <h4>9. Testing &amp; evaluation</h4>
 <ul>
-<li><strong>91 automated tests</strong> (72 backend + 19 frontend), all mocked, so they run without an API key.</li>
+<li><strong>98 automated tests</strong> (78 backend + 20 frontend), all mocked, so they run without an API key.</li>
 <li><strong>Answer eval</strong> (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.</li>
 <li><strong>Retrieval eval</strong> (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.</li>
 <li>About <strong>3 seconds</strong> and <strong>$0.001</strong> per answer (median 2.9 s, average $0.0013).</li>
@@ -514,6 +521,26 @@ python tools/scripts/ask.py --trace &quot;...&quot;   # show each agent's step
 <td>POST</td>
 <td><code>/queries/{id}/feedback</code></td>
 <td>Mark an answer helpful or not (FR9)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/sessions</code></td>
+<td>A customer's tickets with ticket number, state and question count</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/sessions/active</code></td>
+<td>The last active ticket with its messages (<code>{&quot;customer_id&quot;, &quot;create&quot;?}</code>; <code>create: false</code> returns null instead of opening one)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/sessions/new</code></td>
+<td>Open a new ticket; the open one goes on hold</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/sessions/{id}/close</code>, <code>/sessions/{id}/resume</code></td>
+<td>Close a ticket, or reopen one as the active ticket</td>
 </tr>
 </tbody>
 </table>

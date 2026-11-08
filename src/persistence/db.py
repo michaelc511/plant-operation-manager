@@ -16,7 +16,13 @@ MIGRATIONS = [
     ("queries", "flags", "TEXT NOT NULL DEFAULT '[]'"),
     ("queries", "confidence", "TEXT"),
     ("queries", "trace", "TEXT NOT NULL DEFAULT '[]'"),
+    ("sessions", "state", "TEXT NOT NULL DEFAULT 'open'"),
 ]
+
+# Run once, right after a migration adds its column, to fill it for existing rows.
+BACKFILLS = {
+    ("sessions", "state"): "UPDATE sessions SET state = 'closed' WHERE status = 'closed'",
+}
 
 
 def db_path() -> Path:
@@ -43,4 +49,10 @@ def init_db(conn: sqlite3.Connection) -> None:
         existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
         if column not in existing:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+            if (table, column) in BACKFILLS:
+                conn.execute(BACKFILLS[(table, column)])
     conn.commit()
+    if os.getenv("DEMO_TICKETS", "1") != "0":
+        from persistence.seed import seed_demo_tickets
+
+        seed_demo_tickets(conn)  # no-op unless the sessions table is empty (first run)

@@ -1,10 +1,18 @@
-import type { AnswerStatus, Route } from "../api/types";
+import type { AnswerStatus, Route, TicketState } from "../api/types";
 
 export const STATUS_LABEL: Record<AnswerStatus, string> = {
   answered: "Answered",
   not_found: "Not in the documents",
   clarify: "Needs more detail",
   out_of_scope: "Outside the documents",
+};
+
+export const TICKET_STATE_LABEL: Record<TicketState, string> = {
+  open: "Open",
+  on_hold: "On hold",
+  escalated: "Escalated",
+  resolved: "Resolved",
+  closed: "Closed",
 };
 
 export const ROUTE_LABEL: Record<Route, string> = {

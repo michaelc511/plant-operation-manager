@@ -55,15 +55,22 @@ Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (quer
 - Finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78% (32 test questions).
 
 #### 6. SQL: user sessions and audit log (SQLite)
-- **`sessions`:** one active conversation per customer, which can be closed and resumed.
+- **`sessions`:** one conversation per ticket. Users see a ticket number (#1001, #1002, …) instead
+  of the session ID, and a state: **Open** (the one active ticket), **On hold** (switched away from),
+  **Escalated**, **Resolved** or **Closed**. Returning users get their last active ticket back.
+- **Demo tickets:** on first run (empty `sessions` table) Carl Wayne gets five tickets, #1001 Open
+  through #1005 Closed, with real agent answers from `src/persistence/demo_tickets.json`.
+  Set `DEMO_TICKETS=0` to skip.
 - **`session_messages`:** every question and answer in a session. Keys, emails and phone numbers are redacted before saving.
 - **`queries`:** a full audit log of routes, citations, flags, confidence, cost and 👍/👎 feedback.
 - Stored locally at `data/app.db`. Tables and columns are created or upgraded automatically on startup.
 
 #### 7. Frontend: React with TypeScript
-- **React 18 + TypeScript**, built with **Vite 5**, tested with Vitest (19 tests).
+- **React 18 + TypeScript**, built with **Vite 5**, tested with Vitest (20 tests).
 - Mobile-first, so it works on a phone on the same Wi-Fi, with light and dark mode.
-- **Ask** screen with cited answer cards and feedback. **History** screen with resumable sessions.
+- **Ask** screen with the signed-in customer (demo: Carl Wayne, read-only customer ID), the open
+  ticket and its state (**Close ticket**, **New ticket**), cited answer cards and feedback.
+  **History** screen with every other ticket and its state, each with **Reopen**.
 - Calls FastAPI through a `/api` proxy, so the browser never talks to OpenAI directly.
 
 #### 8. AI guardrails (safety & security)
@@ -79,7 +86,7 @@ Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (quer
   (`src/services/redact.py`) before questions and answers are saved to session history.
 
 #### 9. Testing & evaluation
-- **91 automated tests** (72 backend + 19 frontend), all mocked, so they run without an API key.
+- **98 automated tests** (78 backend + 20 frontend), all mocked, so they run without an API key.
 - **Answer eval** (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.
 - **Retrieval eval** (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.
 - About **3 seconds** and **$0.001** per answer (median 2.9 s, average $0.0013).
@@ -342,6 +349,10 @@ The backend needs `OPENAI_API_KEY` and `DATABASE_URL` (e.g. `sqlite:///data/app.
 | POST | `/ask` | Routed, cited, verified answer from the LangGraph agent (status, routes, answer, citations, flags, confidence, trace), logged to SQLite |
 | GET | `/queries`, `/queries/{id}` | Query log (FR8) |
 | POST | `/queries/{id}/feedback` | Mark an answer helpful or not (FR9) |
+| GET | `/sessions` | A customer's tickets with ticket number, state and question count |
+| POST | `/sessions/active` | The last active ticket with its messages (`{"customer_id", "create"?}`; `create: false` returns null instead of opening one) |
+| POST | `/sessions/new` | Open a new ticket; the open one goes on hold |
+| POST | `/sessions/{id}/close`, `/sessions/{id}/resume` | Close a ticket, or reopen one as the active ticket |
 
 Layout: `src/main.py` (app) → `src/api/` (routes, schemas, dependencies) → `src/services/` → `src/persistence/`
 (SQLite) and `src/rag/` (vector store). The agent plugs in through the `AnswerAgent` interface in

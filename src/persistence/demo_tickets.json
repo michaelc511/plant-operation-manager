@@ -1,0 +1,206 @@
+{
+  "_about": "Demo tickets for customer 1 (Carl Wayne), loaded on first run when the sessions table is empty. Answers are real agent outputs copied from the query log; days_ago sets last activity. Set DEMO_TICKETS=0 to skip.",
+  "customer_id": "1",
+  "tickets": [
+    {
+      "ticket_no": 1001,
+      "state": "open",
+      "days_ago": 0,
+      "exchanges": []
+    },
+    {
+      "ticket_no": 1002,
+      "state": "on_hold",
+      "days_ago": 1,
+      "exchanges": [
+        {
+          "question": "I need to change the die on the HP-400. What do I have to do?",
+          "answer": "To change the die on the HP-400, first lower the ram onto the die, then perform a full lockout by disconnecting DS-400, bleed the accumulator to 0 psi at valve HV-2, and insert both ram safety blocks from the red storage rack. Never enter the die area without these safety steps. Next, unclamp and remove the die using the die cart; do not slide dies by hand. Install the new die, center it with the locating pins, and torque the die clamp bolts to 250 N·m (184 ft·lb) in a cross pattern. After installation, remove the blocks and locks, set the shut height per the die setup sheet, and run a first-article part for quality control. The first-article inspection must be verified and signed before production continues. [1][2][3][4][5]",
+          "citations": [
+            {
+              "source": "maintenance",
+              "doc_no": "MM-100",
+              "title": "Equipment Maintenance Manual",
+              "section": "5.4",
+              "section_title": "Die Change",
+              "page_start": 5,
+              "page_end": 5
+            },
+            {
+              "source": "maintenance",
+              "doc_no": "MM-100",
+              "title": "Equipment Maintenance Manual",
+              "section": "5",
+              "section_title": "Hydraulic Press HP-400 (Line 2)",
+              "page_start": 4,
+              "page_end": 4
+            },
+            {
+              "source": "safety",
+              "doc_no": "EHS-SOP-001",
+              "title": "Plant Safety Procedures",
+              "section": "5.3",
+              "section_title": "Energy Sources by Equipment",
+              "page_start": 4,
+              "page_end": 4
+            },
+            {
+              "source": "safety",
+              "doc_no": "EHS-SOP-001",
+              "title": "Plant Safety Procedures",
+              "section": "5.1",
+              "section_title": "When Lockout Is Required",
+              "page_start": 3,
+              "page_end": 3
+            },
+            {
+              "source": "quality",
+              "doc_no": "QC-STD-200",
+              "title": "Quality Control Standards",
+              "section": "4.1",
+              "section_title": "First-Article Inspection (FAI)",
+              "page_start": 3,
+              "page_end": 3
+            }
+          ],
+          "confidence": "high",
+          "status": "answered"
+        }
+      ]
+    },
+    {
+      "ticket_no": 1003,
+      "state": "escalated",
+      "days_ago": 2,
+      "exchanges": [
+        {
+          "question": "What PPE do I need to clean the solvent tank?",
+          "answer": "For cleaning the solvent tank of PW-1, you need nitrile gloves (minimum 15 mil), chemical splash goggles, and a chemical-resistant apron. Additionally, local exhaust ventilation must be running during use. If the ventilation is not running, you must wear a half-face respirator with organic vapor cartridges, and respirator users must be fit-tested within the last 12 months. Inspect PPE before use and replace as necessary. [1][2][3]",
+          "citations": [
+            {
+              "source": "safety",
+              "doc_no": "EHS-SOP-001",
+              "title": "Plant Safety Procedures",
+              "section": "4.2",
+              "section_title": "Task-Specific PPE Matrix",
+              "page_start": 2,
+              "page_end": 3
+            },
+            {
+              "source": "safety",
+              "doc_no": "EHS-SOP-001",
+              "title": "Plant Safety Procedures",
+              "section": "7.2",
+              "section_title": "Parts Washer PW-1 Solvent",
+              "page_start": 5,
+              "page_end": 6
+            },
+            {
+              "source": "safety",
+              "doc_no": "EHS-SOP-001",
+              "title": "Plant Safety Procedures",
+              "section": "4.3",
+              "section_title": "PPE Inspection and Replacement",
+              "page_start": 3,
+              "page_end": 3
+            }
+          ],
+          "confidence": "high",
+          "status": "answered"
+        }
+      ]
+    },
+    {
+      "ticket_no": 1004,
+      "state": "resolved",
+      "days_ago": 3,
+      "exchanges": [
+        {
+          "question": "What torque do the HP-400 die clamp bolts need?",
+          "answer": "The HP-400 die clamp bolts need to be torqued to 250 N·m (184 ft·lb). Torque the bolts in a cross pattern during die installation. [1][2]",
+          "citations": [
+            {
+              "source": "maintenance",
+              "doc_no": "MM-100",
+              "title": "Equipment Maintenance Manual",
+              "section": "11",
+              "section_title": "Torque Specifications",
+              "page_start": 7,
+              "page_end": 7
+            },
+            {
+              "source": "maintenance",
+              "doc_no": "MM-100",
+              "title": "Equipment Maintenance Manual",
+              "section": "5.4",
+              "section_title": "Die Change",
+              "page_start": 5,
+              "page_end": 5
+            }
+          ],
+          "confidence": "medium",
+          "status": "answered"
+        },
+        {
+          "question": "Where is the evacuation assembly point?",
+          "answer": "The evacuation assembly point is Area B in the north parking lot. After evacuating, the floor supervisor takes the shift roster, completes a headcount within 10 minutes, and reports any missing people to the incident commander. No one should re-enter until EHS gives the all-clear. [1]",
+          "citations": [
+            {
+              "source": "safety",
+              "doc_no": "EHS-SOP-001",
+              "title": "Plant Safety Procedures",
+              "section": "9.3",
+              "section_title": "Evacuation",
+              "page_start": 7,
+              "page_end": 7
+            }
+          ],
+          "confidence": "high",
+          "status": "answered"
+        }
+      ]
+    },
+    {
+      "ticket_no": 1005,
+      "state": "closed",
+      "days_ago": 4,
+      "exchanges": [
+        {
+          "question": "What do I do with a part that fails inspection?",
+          "answer": "If a part fails inspection, stop the process and notify the floor supervisor. Hold all parts made since the last in-control subgroup and check them 100% for the affected characteristic. Find and correct the cause of the failure, note it on the chart, and run a First-Article Inspection (FAI) before restarting production. Only the Material Review Board (MRB) may disposition nonconforming parts; operators and supervisors cannot rework, use, or scrap parts on their own. The MRB can decide to use as is (with approvals), rework (with instructions and 100% re-inspection), scrap (mark with red paint and record), or return to supplier (with SCAR issued). [1][2][3]",
+          "citations": [
+            {
+              "source": "quality",
+              "doc_no": "QC-STD-200",
+              "title": "Quality Control Standards",
+              "section": "7.3",
+              "section_title": "Reaction Plan",
+              "page_start": 5,
+              "page_end": 5
+            },
+            {
+              "source": "quality",
+              "doc_no": "QC-STD-200",
+              "title": "Quality Control Standards",
+              "section": "4.1",
+              "section_title": "First-Article Inspection (FAI)",
+              "page_start": 3,
+              "page_end": 3
+            },
+            {
+              "source": "quality",
+              "doc_no": "QC-STD-200",
+              "title": "Quality Control Standards",
+              "section": "8.4",
+              "section_title": "Disposition",
+              "page_start": 5,
+              "page_end": 6
+            }
+          ],
+          "confidence": "high",
+          "status": "answered"
+        }
+      ]
+    }
+  ]
+}

@@ -44,10 +44,18 @@ The green dot in the header means the app reached the backend and the agents are
 dot shows a banner explaining what's wrong.
 
 ## Using the app
-- **Ask** tab: type a question or tap a sample. Each answer shows its status, the documents
+- **Ask** tab: the top bar shows the signed-in customer (demo: Carl Wayne, customer ID 1,
+  read-only) and the open ticket (e.g. **Ticket #1001 · Open**). **Close ticket** closes it (no
+  ticket is open until you ask a question or tap **New ticket**). **New ticket** opens a fresh one
+  and puts the current one on hold. Coming back later reopens your last active ticket. Type a
+  question or tap a sample. Each answer shows its status, the documents
   searched, confidence, numbered citations (tap a number to jump to its source), a
   **Check before acting** box for flags, 👍/👎 feedback, and **How this was answered** (agent steps).
-- **History** tab: the last 30 questions from the query log; tap one to see the full answer.
+- **History** tab: **Ticket history** lists every other ticket with its state (On hold,
+  Escalated, Resolved, Closed) and a **Reopen** button that makes it the open ticket again; then
+  the last 30 questions from the query log; tap one to see the full answer.
+- **First run:** an empty database starts with five demo tickets for Carl Wayne, #1001 (Open)
+  to #1005 (Closed). Set `DEMO_TICKETS=0` in `.env` to start empty.
 
 ## Production-style build
 ```bash

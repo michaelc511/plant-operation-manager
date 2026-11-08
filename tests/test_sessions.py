@@ -178,6 +178,19 @@ def test_sessions_are_per_customer(client, clock):
     assert r.status_code == 409
 
 
+def test_ticket_numbers_count_per_customer_and_never_change(client):
+    with client() as c:
+        first = c.post("/sessions/active", json={"customer_id": "1"}).json()
+        other = c.post("/sessions/active", json={"customer_id": "2"}).json()
+        assert first["ticket_no"] == 1001 and other["ticket_no"] == 1001
+        closed = c.post(f"/sessions/{first['session_id']}/close", json={"customer_id": "1"}).json()
+        assert closed["status"] == "closed" and closed["ticket_no"] == 1001
+        second = c.post("/sessions/active", json={"customer_id": "1"}).json()
+        assert second["created"] is True and second["ticket_no"] == 1002
+        listed = {s["session_id"]: s["ticket_no"] for s in c.get("/sessions?customer_id=1").json()}
+    assert listed == {first["session_id"]: 1001, second["session_id"]: 1002}
+
+
 def test_mismatch_is_rejected_before_the_llm_runs(client):
     agent = FakeAgent()
     agent.run = lambda q: pytest.fail("agent should not run for another customer's session")
@@ -238,3 +251,71 @@ def test_close_and_resume_check_session_and_customer(client):
         assert c.post(f"/sessions/{sid}/close", json={"customer_id": "2"}).status_code == 409
         assert c.post(f"/sessions/{sid}/resume", json={"customer_id": "2"}).status_code == 409
         assert c.get("/sessions?customer_id=bad id").status_code == 422
+
+
+# ---- tickets: states, first-run demo seed, new / close / reopen flow
+def _active(c, create=False):
+    return c.post("/sessions/active", json={"customer_id": "1", "create": create}).json()
+
+
+def _states(c):
+    return {s["ticket_no"]: s["state"] for s in c.get("/sessions?customer_id=1").json()}
+
+
+def test_first_run_seeds_five_demo_tickets_once(client, monkeypatch):
+    monkeypatch.setenv("DEMO_TICKETS", "1")
+    with client() as c:
+        current = _active(c)
+        assert current["ticket_no"] == 1001 and current["state"] == "open" and current["status"] == "active"
+        assert _states(c) == {1001: "open", 1002: "on_hold", 1003: "escalated", 1004: "resolved", 1005: "closed"}
+        resolved = next(s for s in c.get("/sessions?customer_id=1").json() if s["ticket_no"] == 1004)
+        assert resolved["question_count"] == 2
+    with client() as c:  # a restart doesn't seed again
+        assert len(c.get("/sessions?customer_id=1").json()) == 5
+
+
+def test_close_leaves_no_active_ticket_until_a_question_opens_one(client):
+    with client() as c:
+        first = _active(c, create=True)
+        closed = c.post(f"/sessions/{first['session_id']}/close", json={"customer_id": "1"}).json()
+        assert closed["state"] == "closed"
+        assert _active(c) is None
+        r = c.post("/ask", json={"question": "What tolerance for A-102?", "customer_id": "1"}).json()
+        assert r["ticket_no"] == 1002 and _active(c)["session_id"] == r["session_id"]
+    assert _states(c) == {1001: "closed", 1002: "open"}
+
+
+def test_new_ticket_puts_the_open_one_on_hold_and_reopen_swaps_back(client):
+    with client() as c:
+        first = _active(c, create=True)
+        second = c.post("/sessions/new", json={"customer_id": "1"}).json()
+        assert second["ticket_no"] == 1002 and second["created"] is True
+        assert _states(c) == {1001: "on_hold", 1002: "open"}
+        reopened = c.post(f"/sessions/{first['session_id']}/resume", json={"customer_id": "1"}).json()
+        assert reopened["state"] == "open" and _active(c)["ticket_no"] == 1001
+        assert _states(c) == {1001: "open", 1002: "on_hold"}
+
+
+def test_returning_user_gets_the_last_active_ticket_without_idle_timeout(client, clock):
+    with client() as c:
+        sid = _active(c, create=True)["session_id"]
+        clock(60 * 24 * 3)  # three days later
+        again = _active(c)
+    assert again["session_id"] == sid and again["state"] == "open"
+
+
+def test_old_database_gets_ticket_state_backfilled(tmp_path, monkeypatch):
+    from persistence.db import connect, init_db
+
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'old.db'}")
+    conn = connect()
+    conn.executescript(
+        "CREATE TABLE sessions (session_id TEXT PRIMARY KEY, customer_id TEXT NOT NULL,"
+        " status TEXT NOT NULL DEFAULT 'active', created_at TEXT NOT NULL, last_active_at TEXT NOT NULL);"
+        "INSERT INTO sessions VALUES ('a', '1', 'closed', '2026-11-01T00:00:00Z', '2026-11-01T00:00:00Z');"
+        "INSERT INTO sessions VALUES ('b', '1', 'active', '2026-11-02T00:00:00Z', '2026-11-02T00:00:00Z');"
+    )
+    init_db(conn)
+    states = dict(conn.execute("SELECT session_id, state FROM sessions").fetchall())
+    conn.close()
+    assert states == {"a": "closed", "b": "open"}

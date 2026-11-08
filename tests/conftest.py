@@ -25,6 +25,13 @@ def _vec(text, dim=64):
     return v
 
 
+@pytest.fixture(autouse=True)
+def _no_demo_tickets(monkeypatch):
+    """Tests start from an empty sessions table; test_sessions.py covers the demo seed itself."""
+    monkeypatch.setenv("DEMO_TICKETS", "0")
+    monkeypatch.delenv("SESSION_IDLE_MINUTES", raising=False)
+
+
 @pytest.fixture
 def llm():
     return LLMClient(client=SimpleNamespace(embeddings=FakeEmbeddings()))

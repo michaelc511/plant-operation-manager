@@ -63,9 +63,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ helpful, note: note ?? null }),
     }),
-  // Sessions: one active conversation per customer, stored by the backend.
-  activeSession: (customerId: string) =>
-    request<Session>("/sessions/active", { method: "POST", body: JSON.stringify({ customer_id: customerId }) }),
+  // Sessions (tickets): one active ticket per customer, stored by the backend.
+  // create=false returns the last active ticket, or null if the customer closed it.
+  activeSession: (customerId: string, create = true) =>
+    request<Session | null>("/sessions/active", {
+      method: "POST",
+      body: JSON.stringify({ customer_id: customerId, create }),
+    }),
+  newSession: (customerId: string) =>
+    request<Session>("/sessions/new", { method: "POST", body: JSON.stringify({ customer_id: customerId }) }),
   sessions: (customerId: string, limit = 20) =>
     request<SessionSummary[]>(`/sessions?customer_id=${encodeURIComponent(customerId)}&limit=${limit}`),
   closeSession: (sessionId: string, customerId: string) =>
