@@ -24,41 +24,50 @@ th,td{border:1px solid var(--border);padding:6px 13px;text-align:left;vertical-a
 th{font-weight:600;background:var(--code)}tr:nth-child(2n) td{background:var(--stripe)}
 blockquote{color:var(--muted);border-left:4px solid var(--border);padding:0 1em;margin-left:0}
 hr{border:0;border-top:1px solid var(--border);margin:32px 0}
+img{max-width:100%;height:auto;border-radius:8px}
 </style>
 </head>
 <body>
 <main>
 <h1 id="plant-operation-manager">plant-operation-manager</h1>
-<h2 id="start-here">Start here</h2>
-<h3 id="product-pitch-demo-and-requirements">PRODUCT PITCH, DEMO AND REQUIREMENTS</h3>
-<p>Everything for reviewing the solution is in <a target="_blank" rel="noopener" href="demo-and-requirements/"><code>demo-and-requirements/</code></a>:</p>
-<table>
-<thead>
-<tr>
-<th>File</th>
-<th>What it is</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a target="_blank" rel="noopener" href="demo-and-requirements/1-Consulting_Pitch_One_Page_Final__deck.pdf"><code>1-Consulting_Pitch_One_Page_Final__deck.pdf</code></a></td>
-<td><strong>The visual</strong>: one-page pitch deck for the solution</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="demo-and-requirements/2-presentation_speech.pdf"><code>2-presentation_speech.pdf</code></a></td>
-<td><strong>Presentation speech</strong>: speaker notes for each stakeholder (safety, security, accuracy, closing)</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="demo-and-requirements/3-video_demo_RAG_and_memory.mp4"><code>3-video_demo_RAG_and_memory.mp4</code></a></td>
-<td><strong>Video demo</strong> of the app in use: RAG answers with citations and ticket memory (1 min 16 s). <strong>▶ Watch on YouTube: <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=WV960Ni4jfc">https://www.youtube.com/watch?v=WV960Ni4jfc</a></strong>, or download the MP4</td>
-</tr>
-<tr>
-<td><a target="_blank" rel="noopener" href="demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf"><code>AI Solution Prototype Challenge.pdf</code></a></td>
-<td><strong>Requirements</strong>: the original challenge brief</td>
-</tr>
-</tbody>
-</table>
-<h3 id="solution-architecture-for-accuracy-security-safety-guardrails-and-ai-governance">SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, SAFETY, GUARDRAILS AND AI GOVERNANCE</h3>
+<p><a target="_blank" rel="noopener" href="demo-and-requirements/1-Consulting_Pitch_One_Page_Final__deck.pdf"><img src="demo-and-requirements/1-pitch-deck.png" alt="Product pitch: Floor-Ready Answers. Zero Safety Compromise. One-page pitch deck for Plant Docs Assistant" /></a></p>
+<h2 id="live-demo-and-video">Live demo and video</h2>
+<ul>
+<li>🚀 <strong>Live demo:</strong> <a target="_blank" rel="noopener" href="https://plant-operation-manager.fly.dev">https://plant-operation-manager.fly.dev</a> (opens as demo user Carl Wayne; no setup needed)</li>
+<li>🎬 <strong>Video demo (1 min 16 s):</strong> <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=WV960Ni4jfc">https://www.youtube.com/watch?v=WV960Ni4jfc</a></li>
+<li>📋 <strong>Requirements:</strong> <a target="_blank" rel="noopener" href="demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf">the original challenge brief (PDF)</a></li>
+</ul>
+<h2 id="presentation-speech">Presentation speech</h2>
+<p><strong>Plant Docs Assistant · Consulting Pitch</strong></p>
+<h3 id="speaker-notes-what-you-say-to-the-panel">Speaker Notes (What You Say to the Panel)</h3>
+<h4>1. Opening / Safety</h4>
+<p><em>Addressing the Plant Manager &amp; EHS Lead</em></p>
+<blockquote>
+<p>&quot;We know your top priority is keeping people safe on the floor. Supervisors are often caught between three different document sets, and hesitation or a wrong search can lead to injury or scrap. This system treats worker safety as a hard constraint: any query touching lockout, chemicals, or guards automatically pulls in safety procedures and warns supervisors before they act. If it's not in the docs, it refuses to guess.&quot;</p>
+</blockquote>
+<h4>2. Security</h4>
+<p><em>Addressing IT Security</em></p>
+<blockquote>
+<p>&quot;For IT security, your proprietary plant manuals and data never leave your control. All documents and the vector database reside on your local infrastructure. The browser never talks directly to the AI provider, and prompt-injection guardrails and automatic redaction ensure complete data protection and auditability.&quot;</p>
+</blockquote>
+<h4>3. Accuracy &amp; Trust</h4>
+<p><em>Addressing the Quality Lead</em></p>
+<blockquote>
+<p>&quot;Every single answer includes clickable citations down to the exact section and page. Our hybrid search combines keyword precision with semantic understanding, matching the exact part numbers and valve tags your team uses every day, backed by a 100% routing accuracy in our test sets.&quot;</p>
+</blockquote>
+<h4>4. Next Steps &amp; Closing</h4>
+<p><em>Closing the pitch</em></p>
+<blockquote>
+<p>&quot;It delivers answers in about three seconds for a fraction of a cent. Our path to production is straightforward: we are ready to deploy an initial pilot using your actual controlled documents, letting your EHS and Quality teams review every output against the full audit log, with enterprise SSO scheduled for wider rollout.&quot;</p>
+</blockquote>
+<hr />
+<h3 id="key-improvements-made-for-the-customer">Key Improvements Made for the Customer</h3>
+<ul>
+<li><strong>Visual Hierarchy:</strong> Replaced long paragraphs with punchy bullet points starting with bold action verbs/outcomes, making it immediately readable for busy executives.</li>
+<li><strong>Audience Alignment:</strong> Grouped features directly to speak to the pain points of the four stakeholders (Plant Manager, EHS, IT Security, Quality).</li>
+<li><strong>Conversational Tone:</strong> Shifted the speaker notes to sound like a confident, consultative advisor rather than an automated checklist reader.</li>
+</ul>
+<h2 id="solution-architecture-for-accuracy-security-safety-guardrails-and-ai-governance">SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, SAFETY, GUARDRAILS AND AI GOVERNANCE</h2>
 <pre><code>React + TypeScript (Vite)   →  FastAPI  →  LangGraph orchestrator
                                               ├─ Router agent      (gpt-4.1-mini)
                                               ├─ Retrieval agent   (hybrid: Chroma vectors + BM25)
@@ -168,7 +177,7 @@ deployed app (<code>src/services/limits.py</code>).</li>
 <li>A written AI-use policy and model card (intended use, limits, owners, review cadence).</li>
 <li>An eval gate in CI that blocks merges if accuracy drops.</li>
 </ul>
-<h3 id="run-the-app">Run the app</h3>
+<h2 id="run-the-app">Run the app</h2>
 <p>You need Python 3.10+ (3.11 recommended), Node.js 18+ and your own OpenAI API key.</p>
 <p><strong>1. Install (once)</strong></p>
 <pre><code class="language-bash">cd plant-operation-manager
