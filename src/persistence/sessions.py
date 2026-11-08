@@ -37,24 +37,39 @@ def list_messages(conn: sqlite3.Connection, session_id: str) -> list[dict]:
 
 
 # ---- session rows (one per conversation)
+TICKET_BASE = 1000
+# Ticket number shown to users instead of the session ID: the customer's 1st session is #1001, the
+# 2nd #1002, ... Sessions are never deleted, so the number for a session never changes.
+_TICKET_NO = (
+    f" {TICKET_BASE} + (SELECT COUNT(*) FROM sessions t"
+    " WHERE t.customer_id = s.customer_id AND t.rowid <= s.rowid) AS ticket_no"
+)
+
+
+# A ticket the customer switched away from (not closed by them) goes on hold.
+_HOLD = "state = CASE WHEN state = 'open' THEN 'on_hold' ELSE state END"
+
+
 def get_session(conn: sqlite3.Connection, session_id: str) -> dict | None:
-    r = conn.execute("SELECT * FROM sessions WHERE session_id = ?", (session_id,)).fetchone()
+    r = conn.execute(f"SELECT s.*,{_TICKET_NO} FROM sessions s WHERE s.session_id = ?", (session_id,)).fetchone()
     return dict(r) if r else None
 
 
-def latest_active(conn: sqlite3.Connection, customer_id: str, cutoff: str) -> dict | None:
-    """The customer's most recently used active session, if it was used at or after `cutoff`."""
+def latest_active(conn: sqlite3.Connection, customer_id: str, cutoff: str | None = None) -> dict | None:
+    """The customer's most recently used active session (used at or after `cutoff`, if given)."""
     r = conn.execute(
-        "SELECT * FROM sessions WHERE customer_id = ? AND status = 'active' AND last_active_at >= ?"
-        " ORDER BY last_active_at DESC, rowid DESC LIMIT 1",
-        (customer_id, cutoff),
+        f"SELECT s.*,{_TICKET_NO} FROM sessions s"
+        " WHERE s.customer_id = ? AND s.status = 'active' AND s.last_active_at >= ?"
+        " ORDER BY s.last_active_at DESC, s.rowid DESC LIMIT 1",
+        (customer_id, cutoff or ""),
     ).fetchone()
     return dict(r) if r else None
 
 
 def close_stale(conn: sqlite3.Connection, customer_id: str, cutoff: str) -> int:
     cur = conn.execute(
-        "UPDATE sessions SET status = 'closed' WHERE customer_id = ? AND status = 'active' AND last_active_at < ?",
+        f"UPDATE sessions SET status = 'closed', {_HOLD} WHERE customer_id = ? AND status = 'active'"
+        " AND last_active_at < ?",
         (customer_id, cutoff),
     )
     conn.commit()
@@ -63,8 +78,8 @@ def close_stale(conn: sqlite3.Connection, customer_id: str, cutoff: str) -> int:
 
 def create_session(conn: sqlite3.Connection, session_id: str, customer_id: str, now: str) -> dict:
     conn.execute(
-        "INSERT INTO sessions (session_id, customer_id, status, created_at, last_active_at)"
-        " VALUES (?, ?, 'active', ?, ?)",
+        "INSERT INTO sessions (session_id, customer_id, status, state, created_at, last_active_at)"
+        " VALUES (?, ?, 'active', 'open', ?, ?)",
         (session_id, customer_id, now, now),
     )
     conn.commit()
@@ -72,19 +87,23 @@ def create_session(conn: sqlite3.Connection, session_id: str, customer_id: str, 
 
 
 def touch(conn: sqlite3.Connection, session_id: str, now: str) -> None:
-    conn.execute("UPDATE sessions SET status = 'active', last_active_at = ? WHERE session_id = ?", (now, session_id))
+    conn.execute(
+        "UPDATE sessions SET status = 'active', state = 'open', last_active_at = ? WHERE session_id = ?",
+        (now, session_id),
+    )
     conn.commit()
 
 
 def close_session(conn: sqlite3.Connection, session_id: str) -> None:
-    conn.execute("UPDATE sessions SET status = 'closed' WHERE session_id = ?", (session_id,))
+    conn.execute("UPDATE sessions SET status = 'closed', state = 'closed' WHERE session_id = ?", (session_id,))
     conn.commit()
 
 
 def close_others(conn: sqlite3.Connection, customer_id: str, keep_session_id: str) -> None:
-    """Keep at most one active session per customer."""
+    """Keep at most one active session per customer. The others go on hold (state kept if set by staff)."""
     conn.execute(
-        "UPDATE sessions SET status = 'closed' WHERE customer_id = ? AND status = 'active' AND session_id != ?",
+        f"UPDATE sessions SET status = 'closed', {_HOLD}"
+        " WHERE customer_id = ? AND status = 'active' AND session_id != ?",
         (customer_id, keep_session_id),
     )
     conn.commit()
@@ -92,7 +111,7 @@ def close_others(conn: sqlite3.Connection, customer_id: str, keep_session_id: st
 
 def list_sessions(conn: sqlite3.Connection, customer_id: str, limit: int) -> list[dict]:
     rows = conn.execute(
-        "SELECT s.*,"
+        f"SELECT s.*,{_TICKET_NO},"
         " (SELECT COUNT(*) FROM session_messages m WHERE m.session_id = s.session_id AND m.role = 'user')"
         "   AS question_count,"
         " (SELECT m.message FROM session_messages m WHERE m.session_id = s.session_id AND m.role = 'user'"

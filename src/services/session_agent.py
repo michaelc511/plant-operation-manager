@@ -1,14 +1,17 @@
-"""SessionAgent: finds a customer's active session or creates one. Plain code, no LLM call.
+"""SessionAgent: finds a customer's active session (ticket) or creates one. Plain code, no LLM call.
 
-    resolve(customer_id)              -> active session used within the idle window? reuse it
-                                         otherwise close stale ones and create a new session
-    resolve(customer_id, session_id)  -> continue that session (create it if it's new)
-    close(customer_id, session_id)    -> end it; the next resolve() starts a new session
-    resume(customer_id, session_id)   -> make an earlier session the active one again
+    current(customer_id)              -> the last active ticket, or None (never creates one)
+    resolve(customer_id)              -> the last active ticket, or a new one if there is none
+    resolve(customer_id, session_id)  -> continue that ticket (create it if it's new)
+    new(customer_id)                  -> open a new ticket; the previous one goes on hold
+    close(customer_id, session_id)    -> close it (state 'closed'); nothing is active until the
+                                         customer opens a new ticket, asks, or reopens one
+    resume(customer_id, session_id)   -> reopen an earlier ticket as the active one
 
-A customer has at most one active session: whichever session is resolved or resumed becomes the
-active one and any other is closed. A session that belongs to another customer raises
-SessionCustomerMismatchError (HTTP 409). The idle window is SESSION_IDLE_MINUTES (default 30).
+A customer has at most one active ticket: whichever is resolved, created or resumed becomes active
+and any other goes on hold. A session that belongs to another customer raises
+SessionCustomerMismatchError (HTTP 409). Returning users get their last active ticket back; set
+SESSION_IDLE_MINUTES to put tickets idle longer than that on hold instead (off by default).
 """
 
 from __future__ import annotations
@@ -21,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 
 from persistence import sessions as repo
 
-DEFAULT_IDLE_MINUTES = 30
+DEFAULT_IDLE_MINUTES = None  # no idle timeout: the last active ticket is kept
 
 
 class SessionNotFoundError(LookupError):
@@ -40,11 +43,13 @@ def _iso(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def idle_minutes() -> int:
+def idle_minutes() -> int | None:
+    """Idle window in minutes, or None for no timeout (unset, 0 or invalid)."""
     try:
-        return max(1, int(os.getenv("SESSION_IDLE_MINUTES", DEFAULT_IDLE_MINUTES)))
+        minutes = int(os.getenv("SESSION_IDLE_MINUTES", "0"))
     except ValueError:
         return DEFAULT_IDLE_MINUTES
+    return minutes if minutes > 0 else DEFAULT_IDLE_MINUTES
 
 
 @dataclass
@@ -65,13 +70,25 @@ class SessionAgent:
                 return self._create(customer_id, session_id, now)
             return ResolvedSession(self._activate(customer_id, session_id, now), created=False)
 
-        cutoff = _iso(now - timedelta(minutes=idle_minutes()))
+        active = self.current(customer_id)
+        if active:
+            return ResolvedSession(active, created=False)
+        return self._create(customer_id, uuid.uuid4().hex, now)
+
+    def current(self, customer_id: str) -> dict | None:
+        """The customer's last active ticket, or None. Tickets past the idle window go on hold."""
+        minutes = idle_minutes()
+        cutoff = _iso(_utcnow() - timedelta(minutes=minutes)) if minutes else None
         active = repo.latest_active(self.conn, customer_id, cutoff)
         if active:
             repo.close_others(self.conn, customer_id, active["session_id"])
-            return ResolvedSession(active, created=False)
-        repo.close_stale(self.conn, customer_id, cutoff)
-        return self._create(customer_id, uuid.uuid4().hex, now)
+            return active
+        if cutoff:
+            repo.close_stale(self.conn, customer_id, cutoff)
+        return None
+
+    def new(self, customer_id: str) -> dict:
+        return self._create(customer_id, uuid.uuid4().hex, _utcnow()).session
 
     def close(self, customer_id: str, session_id: str) -> dict:
         self._owned(customer_id, session_id)

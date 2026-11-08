@@ -1,26 +1,8 @@
-// Session helpers: customer ID persistence and turning stored session messages back into exchanges.
+// Session helpers: the demo customer ID and turning stored session messages back into exchanges.
 import type { AnswerData, Route, Session, SessionMessage, SourceKey } from "../api/types";
 
-export const CUSTOMER_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
-export const DEFAULT_CUSTOMER_ID = "1";
-const CUSTOMER_KEY = "pom.customerId";
-
-export function loadCustomerId(): string {
-  try {
-    const v = localStorage.getItem(CUSTOMER_KEY);
-    return v && CUSTOMER_ID_PATTERN.test(v) ? v : DEFAULT_CUSTOMER_ID;
-  } catch {
-    return DEFAULT_CUSTOMER_ID;
-  }
-}
-
-export function saveCustomerId(id: string): void {
-  try {
-    localStorage.setItem(CUSTOMER_KEY, id);
-  } catch {
-    // storage blocked (private window): the ID just isn't remembered
-  }
-}
+// The demo signs in one fixed customer (Carl Wayne, see customers.ts); the ID is shown read-only.
+export const DEMO_CUSTOMER_ID = "1";
 
 export type Exchange = {
   key: number;
@@ -59,10 +41,6 @@ export function exchangesFromSession(s: Session, nextKey: () => number): Exchang
     }
   }
   return out;
-}
-
-export function shortId(id: string): string {
-  return id.slice(0, 8);
 }
 
 export function when(iso: string): string {

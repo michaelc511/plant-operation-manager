@@ -40,7 +40,8 @@ def ask(question: str, agent: AnswerAgent, conn: sqlite3.Connection, *, session_
     result = agent.run(question)
     latency_ms = int((time.perf_counter() - start) * 1000)
     citations = [Citation(**c) for c in result.citations]  # validates the agent's output
-    session_id = sessions.resolve(customer_id, session_id).session["session_id"]
+    resolved = sessions.resolve(customer_id, session_id).session
+    session_id, ticket_no = resolved["session_id"], resolved["ticket_no"]
     query_id = repo.insert(
         conn,
         question=question,
@@ -81,6 +82,7 @@ def ask(question: str, agent: AnswerAgent, conn: sqlite3.Connection, *, session_
         latency_ms=latency_ms,
         session_id=session_id,
         customer_id=customer_id,
+        ticket_no=ticket_no,
     )
 
 
@@ -96,14 +98,24 @@ def get_session(conn: sqlite3.Connection, session_id: str) -> SessionResponse:
     return _session_response(session, conn)
 
 
-def active_session(conn: sqlite3.Connection, customer_id: str) -> SessionResponse:
-    """Pull the customer's active session with its messages, or create a new empty one."""
-    resolved = SessionAgent(conn).resolve(customer_id)
+def active_session(conn: sqlite3.Connection, customer_id: str, create: bool = True) -> SessionResponse | None:
+    """Pull the customer's last active ticket with its messages. If there is none, create a new
+    empty one (create=True) or return None (create=False)."""
+    agent = SessionAgent(conn)
+    if not create:
+        current = agent.current(customer_id)
+        return _session_response(current, conn) if current else None
+    resolved = agent.resolve(customer_id)
     return _session_response(resolved.session, conn, created=resolved.created)
 
 
+def new_session(conn: sqlite3.Connection, customer_id: str) -> SessionResponse:
+    """Open a new ticket as the active one; the previous active ticket goes on hold."""
+    return _session_response(SessionAgent(conn).new(customer_id), conn, created=True)
+
+
 def close_session(conn: sqlite3.Connection, customer_id: str, session_id: str) -> SessionResponse:
-    """End a session. The customer's next question or active-session call starts a new one."""
+    """Close a ticket. The customer's next question (or New ticket) opens a new one."""
     return _session_response(SessionAgent(conn).close(customer_id, session_id), conn)
 
 

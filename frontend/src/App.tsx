@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api/client";
-import type { Health, Session } from "./api/types";
+import type { Health, Session, TicketState } from "./api/types";
 import { AnswerCard } from "./components/AnswerCard";
 import { AskBar } from "./components/AskBar";
 import { History } from "./components/History";
@@ -8,9 +8,9 @@ import { SessionBar } from "./components/SessionBar";
 import { Sessions } from "./components/Sessions";
 import { Thinking } from "./components/Thinking";
 import { SAMPLE_QUESTIONS } from "./components/labels";
-import { type Exchange, exchangesFromSession, loadCustomerId, saveCustomerId } from "./session/session";
+import { DEMO_CUSTOMER_ID, type Exchange, exchangesFromSession } from "./session/session";
 
-type SessionInfo = { session_id: string; created_at: string | null };
+type SessionInfo = { session_id: string; ticket_no: number; state: TicketState; created_at: string | null };
 
 type Tab = "ask" | "history";
 
@@ -24,19 +24,19 @@ export function App() {
   const nextKey = useRef(1);
 
   // ---- session: one active conversation per customer, restored from the backend
-  const [customerId, setCustomerId] = useState(loadCustomerId);
+  const customerId = DEMO_CUSTOMER_ID; // read-only in the demo: the signed-in customer is fixed
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const loadSeq = useRef(0);
 
-  const applySession = useCallback((s: Session) => {
-    setSession({ session_id: s.session_id, created_at: s.created_at });
-    setExchanges(exchangesFromSession(s, () => nextKey.current++));
+  const applySession = useCallback((s: Session | null) => {
+    setSession(s && { session_id: s.session_id, ticket_no: s.ticket_no, state: s.state, created_at: s.created_at });
+    setExchanges(s ? exchangesFromSession(s, () => nextKey.current++) : []);
   }, []);
 
   const runSessionCall = useCallback(
-    async (call: () => Promise<Session>) => {
+    async (call: () => Promise<Session | null>) => {
       const seq = ++loadSeq.current; // ignore replies to calls that were superseded
       setSessionLoading(true);
       setSessionError(null);
@@ -54,12 +54,12 @@ export function App() {
   );
 
   const loadActive = useCallback(
-    () => runSessionCall(() => api.activeSession(customerId)).catch(() => undefined),
+    // Returning users get their last active ticket back; null if they closed it.
+    () => runSessionCall(() => api.activeSession(customerId, false)).catch(() => undefined),
     [runSessionCall, customerId],
   );
 
   useEffect(() => {
-    saveCustomerId(customerId);
     setSession(null);
     setExchanges([]);
     loadActive();
@@ -70,8 +70,12 @@ export function App() {
     const id = session.session_id;
     await runSessionCall(async () => {
       await api.closeSession(id, customerId);
-      return api.activeSession(customerId); // no active session left, so this starts a new one
+      return null; // nothing is active until a new ticket, a question or a reopen
     }).catch(() => undefined);
+  }
+
+  async function newTicket() {
+    await runSessionCall(() => api.newSession(customerId)).catch(() => undefined);
   }
 
   async function resumeSession(id: string) {
@@ -97,7 +101,12 @@ export function App() {
     try {
       const answer = await api.ask(question, { sessionId: session?.session_id, customerId });
       if (answer.session_id !== session?.session_id)
-        setSession({ session_id: answer.session_id, created_at: session ? null : new Date().toISOString() });
+        setSession({
+          session_id: answer.session_id,
+          ticket_no: answer.ticket_no,
+          state: "open",
+          created_at: new Date().toISOString(),
+        });
       setExchanges((xs) => xs.map((x) => (x.key === key ? { ...x, answer } : x)));
     } catch (e) {
       setExchanges((xs) => xs.map((x) => (x.key === key ? { ...x, error: (e as Error).message } : x)));
@@ -155,12 +164,14 @@ export function App() {
           <SessionBar
             customerId={customerId}
             sessionId={session?.session_id ?? null}
+            ticketNo={session?.ticket_no ?? null}
+            ticketState={session?.state ?? null}
             startedAt={session?.created_at ?? null}
             loading={sessionLoading}
             error={sessionError}
             busy={busy}
-            onCustomerChange={setCustomerId}
             onEnd={endSession}
+            onNew={newTicket}
             onRetry={loadActive}
           />
           <main className="conversation">

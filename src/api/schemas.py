@@ -118,6 +118,7 @@ class AskResponse(BaseModel):
     latency_ms: int
     session_id: str
     customer_id: str
+    ticket_no: int = Field(description="Ticket number of the session this answer was stored in")
 
 
 # ---- query log and feedback
@@ -158,10 +159,15 @@ class SessionMessage(BaseModel):
     created_at: str
 
 
+TicketState = Literal["open", "on_hold", "escalated", "resolved", "closed"]
+
+
 class SessionResponse(BaseModel):
     session_id: str
     customer_id: str
+    ticket_no: int = Field(description="Ticket number shown to users: the customer's Nth session is 1000 + N")
     status: Literal["active", "closed"]
+    state: TicketState = Field(description="Ticket state shown to users; the active ticket is 'open'")
     created_at: str
     last_active_at: str
     created: bool = Field(default=False, description="True if this call started a new session")
@@ -172,10 +178,16 @@ class CustomerRequest(BaseModel):
     customer_id: str = Field(default=DEFAULT_CUSTOMER_ID, pattern=ID_PATTERN)
 
 
+class ActiveSessionRequest(CustomerRequest):
+    create: bool = Field(default=True, description="Create a new ticket if none is active (False returns null)")
+
+
 class SessionSummary(BaseModel):
     session_id: str
     customer_id: str
+    ticket_no: int = Field(description="Ticket number shown to users: the customer's Nth session is 1000 + N")
     status: Literal["active", "closed"]
+    state: TicketState
     created_at: str
     last_active_at: str
     question_count: int

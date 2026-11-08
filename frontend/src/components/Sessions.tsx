@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { customerProfile } from "../session/customers";
 import type { SessionSummary } from "../api/types";
-import { shortId, when } from "../session/session";
+import { when } from "../session/session";
+import { TICKET_STATE_LABEL } from "./labels";
 
 type Props = {
   customerId: string;
@@ -22,6 +24,10 @@ export function Sessions({ customerId, currentSessionId, onResume }: Props) {
 
   useEffect(load, [customerId]);
 
+  // The active ticket lives on the Ask tab; History lists every other one (on hold, escalated,
+  // resolved or closed), each of which can be reopened.
+  const past = items?.filter((s) => s.session_id !== currentSessionId) ?? null;
+
   async function resume(id: string) {
     setResuming(id);
     setError(null);
@@ -36,11 +42,11 @@ export function Sessions({ customerId, currentSessionId, onResume }: Props) {
   return (
     <section className="sessions" aria-labelledby="sessions-title">
       <h2 id="sessions-title">
-        Sessions <span className="session-sub">· customer {customerId}</span>
+        Ticket history <span className="session-sub">· {customerProfile(customerId)?.name ?? "customer"} (ID {customerId})</span>
       </h2>
       {error && (
         <div className="empty" role="alert">
-          <p>Couldn't load sessions: {error}</p>
+          <p>Couldn't load past tickets: {error}</p>
           <button type="button" className="secondary" onClick={load}>
             Try again
           </button>
@@ -48,42 +54,37 @@ export function Sessions({ customerId, currentSessionId, onResume }: Props) {
       )}
       {!error && items === null && (
         <p className="empty" role="status">
-          Loading sessions…
+          Loading past tickets…
         </p>
       )}
-      {items && items.length === 0 && <p className="empty">No sessions yet.</p>}
-      {items && items.length > 0 && (
+      {past && past.length === 0 && (
+        <p className="empty">No other tickets yet. Closing the open ticket or starting a new one moves it here.</p>
+      )}
+      {past && past.length > 0 && (
         <ul className="history">
-          {items.map((s) => {
-            const current = s.session_id === currentSessionId;
+          {past.map((s) => {
             const titleId = `session-${s.session_id}`;
             return (
-              <li key={s.session_id} className={`session-row${current ? " current" : ""}`}>
+              <li key={s.session_id} className="session-row">
                 <div>
                   <span id={titleId} className="history-q">
-                    {s.first_question ?? "New session (no questions yet)"}
+                    {s.first_question ?? "No questions asked"}
                   </span>
                   <span className="history-sub">
-                    <span className={`badge ${s.status === "active" ? "badge-answered" : "badge-closed"}`}>
-                      {s.status === "active" ? "Active" : "Ended"}
-                    </span>
-                    {s.question_count} {s.question_count === 1 ? "question" : "questions"} · {when(s.last_active_at)} ·{" "}
-                    <code title={s.session_id}>{shortId(s.session_id)}</code>
+                    <span className="ticket">#{s.ticket_no}</span>
+                    <span className={`badge ticket-${s.state}`}>{TICKET_STATE_LABEL[s.state]}</span>
+                    {s.question_count} {s.question_count === 1 ? "question" : "questions"} · {when(s.last_active_at)}
                   </span>
                 </div>
-                {current ? (
-                  <span className="current-label">Current</span>
-                ) : (
-                  <button
-                    type="button"
-                    className="secondary"
-                    aria-describedby={titleId}
-                    disabled={resuming !== null}
-                    onClick={() => resume(s.session_id)}
-                  >
-                    {resuming === s.session_id ? "Resuming…" : "Resume"}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="secondary"
+                  aria-describedby={titleId}
+                  disabled={resuming !== null}
+                  onClick={() => resume(s.session_id)}
+                >
+                  {resuming === s.session_id ? "Reopening…" : "Reopen"}
+                </button>
               </li>
             );
           })}

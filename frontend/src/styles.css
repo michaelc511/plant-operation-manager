@@ -623,6 +623,60 @@ a:focus-visible {
   font-size: 14px;
 }
 
+.customer-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding-right: 12px;
+  border-right: 1px solid var(--border);
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--brand-contrast);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.customer-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.customer-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.customer-meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ticket {
+  font-weight: 600;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .customer-card {
+    flex-basis: 100%;
+    padding-right: 0;
+    border-right: 0;
+  }
+}
+
 .customer-field {
   display: flex;
   align-items: center;
@@ -645,8 +699,12 @@ a:focus-visible {
   font: inherit;
 }
 
-.customer-field input[aria-invalid="true"] {
-  border-color: var(--error);
+.customer-field input[readonly] {
+  width: 4.5em;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: default;
+  font-variant-numeric: tabular-nums;
 }
 
 .session-info {
@@ -725,6 +783,33 @@ a:focus-visible {
 .badge-closed {
   background: var(--surface-2);
   color: var(--muted);
+}
+
+/* ticket states */
+.ticket-open {
+  background: var(--quality-bg);
+  color: var(--quality);
+}
+.ticket-on_hold {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.ticket-escalated {
+  background: var(--error-bg);
+  color: var(--error);
+}
+.ticket-resolved {
+  background: var(--surface-2);
+  color: var(--brand);
+}
+.ticket-closed {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.ticket-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .history-title {

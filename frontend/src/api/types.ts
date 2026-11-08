@@ -34,12 +34,13 @@ export interface AskResponse {
   latency_ms: number;
   session_id: string;
   customer_id: string;
+  ticket_no: number;
 }
 
 // What an answer card needs: an /ask reply, a query-log record or a restored session turn.
-export type AnswerData = Omit<AskResponse, "session_id" | "customer_id">;
+export type AnswerData = Omit<AskResponse, "session_id" | "customer_id" | "ticket_no">;
 
-export interface QueryRecord extends Omit<AskResponse, "query_id" | "session_id" | "customer_id"> {
+export interface QueryRecord extends Omit<AskResponse, "query_id" | "session_id" | "customer_id" | "ticket_no"> {
   id: number;
   created_at: string;
   helpful: boolean | null;
@@ -53,6 +54,7 @@ export interface Health {
 }
 
 export type SessionStatus = "active" | "closed";
+export type TicketState = "open" | "on_hold" | "escalated" | "resolved" | "closed";
 
 export interface SessionMessage {
   id: number;
@@ -71,7 +73,9 @@ export interface SessionMessage {
 export interface Session {
   session_id: string;
   customer_id: string;
+  ticket_no: number;
   status: SessionStatus;
+  state: TicketState;
   created_at: string;
   last_active_at: string;
   created: boolean;
@@ -81,7 +85,9 @@ export interface Session {
 export interface SessionSummary {
   session_id: string;
   customer_id: string;
+  ticket_no: number;
   status: SessionStatus;
+  state: TicketState;
   created_at: string;
   last_active_at: string;
   question_count: number;

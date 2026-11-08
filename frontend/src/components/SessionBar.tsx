@@ -1,50 +1,47 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { CUSTOMER_ID_PATTERN, shortId, when } from "../session/session";
+import type { TicketState } from "../api/types";
+import { customerProfile, initials } from "../session/customers";
+import { when } from "../session/session";
+import { TICKET_STATE_LABEL } from "./labels";
 
 type Props = {
   customerId: string;
   sessionId: string | null;
+  ticketNo: number | null;
+  ticketState: TicketState | null;
   startedAt: string | null;
   loading: boolean;
   error: string | null;
   busy: boolean;
-  onCustomerChange: (id: string) => void;
   onEnd: () => void;
+  onNew: () => void;
   onRetry: () => void;
 };
 
-export function SessionBar({ customerId, sessionId, startedAt, loading, error, busy, onCustomerChange, onEnd, onRetry }: Props) {
-  const [draft, setDraft] = useState(customerId);
-  const valid = CUSTOMER_ID_PATTERN.test(draft.trim());
-
-  useEffect(() => setDraft(customerId), [customerId]);
-
-  function apply(e?: FormEvent) {
-    e?.preventDefault();
-    const id = draft.trim();
-    if (valid && id !== customerId) onCustomerChange(id);
-  }
+export function SessionBar({ customerId, sessionId, ticketNo, ticketState, startedAt, loading, error, busy, onEnd, onNew, onRetry }: Props) {
+  const profile = customerProfile(customerId);
 
   return (
     <section className="session-bar" aria-label="Session">
-      <form className="customer-field" onSubmit={apply}>
+      <div className="customer-card" aria-label="Customer">
+        <span className="avatar" aria-hidden="true">
+          {profile ? initials(profile.name) : "?"}
+        </span>
+        <div className="customer-text">
+          <span className="customer-name">{profile ? profile.name : "Guest customer"}</span>
+          <span className="customer-meta">
+            {profile ? profile.role : "No profile on file"}
+          </span>
+        </div>
+      </div>
+
+      <div className="customer-field">
         <label htmlFor="customer-id">Customer ID</label>
-        <input
-          id="customer-id"
-          value={draft}
-          maxLength={64}
-          autoComplete="off"
-          aria-invalid={!valid}
-          aria-describedby={valid ? undefined : "customer-id-error"}
-          disabled={busy}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => apply()}
-        />
-      </form>
+        <input id="customer-id" value={customerId} readOnly aria-readonly="true" title="Signed-in customer (read-only)" />
+      </div>
 
       <div className="session-info" role="status">
         {loading ? (
-          "Loading session…"
+          "Loading ticket…"
         ) : error ? (
           <span className="inline-error">
             {error}{" "}
@@ -52,25 +49,28 @@ export function SessionBar({ customerId, sessionId, startedAt, loading, error, b
               Retry
             </button>
           </span>
-        ) : sessionId ? (
+        ) : sessionId && ticketNo ? (
           <>
-            Session <code title={sessionId}>{shortId(sessionId)}</code>
-            {startedAt && <span className="session-sub"> · started {when(startedAt)}</span>}
+            <span className="ticket">Ticket #{ticketNo}</span>{" "}
+            <span className={`badge ticket-${ticketState ?? "open"}`}>{TICKET_STATE_LABEL[ticketState ?? "open"]}</span>
+            {startedAt && <span className="session-sub"> · opened {when(startedAt)}</span>}
           </>
         ) : (
-          "No session"
+          <span className="session-sub">No open ticket. Ask a question or start a new one.</span>
         )}
       </div>
 
-      <button type="button" className="secondary end-btn" disabled={busy || loading || !sessionId} onClick={onEnd}>
-        End session
-      </button>
+      <div className="ticket-actions">
+        {sessionId && (
+          <button type="button" className="secondary end-btn" disabled={busy || loading} onClick={onEnd}>
+            Close ticket
+          </button>
+        )}
+        <button type="button" className="secondary end-btn" disabled={busy || loading} onClick={onNew}>
+          New ticket
+        </button>
+      </div>
 
-      {!valid && (
-        <p id="customer-id-error" className="inline-error field-error">
-          Use 1–64 letters, numbers, - or _ (no names or emails).
-        </p>
-      )}
     </section>
   );
 }

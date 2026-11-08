@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS sessions (
     session_id     TEXT PRIMARY KEY,
     customer_id    TEXT NOT NULL,
     status         TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed')),
+    -- Ticket state shown to users. The active session is 'open'; switching away puts it 'on_hold';
+    -- Close ticket makes it 'closed'; 'escalated' and 'resolved' are set by staff (demo seed only).
+    state          TEXT NOT NULL DEFAULT 'open'
+                   CHECK (state IN ('open', 'on_hold', 'escalated', 'resolved', 'closed')),
     created_at     TEXT NOT NULL,
     last_active_at TEXT NOT NULL
 );

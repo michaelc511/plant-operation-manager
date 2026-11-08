@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from agents.base import AgentNotConfiguredError, NotConfiguredAgent
 from api.deps import get_agent, get_db, get_llm, get_store
 from api.schemas import (
+    ActiveSessionRequest,
     CustomerRequest,
     AskRequest,
     AskResponse,
@@ -109,10 +110,18 @@ def list_sessions(customer_id: str = Query(default=DEFAULT_CUSTOMER_ID, pattern=
     return ask_service.list_sessions(conn, customer_id, limit)
 
 
-@router.post("/sessions/active", response_model=SessionResponse, tags=["sessions"])
-def active_session(body: CustomerRequest | None = None, conn=Depends(get_db)) -> SessionResponse:
-    """Return the customer's active session (with messages), creating one if there isn't one."""
-    return ask_service.active_session(conn, _customer(body))
+@router.post("/sessions/active", response_model=SessionResponse | None, tags=["sessions"])
+def active_session(body: ActiveSessionRequest | None = None, conn=Depends(get_db)) -> SessionResponse | None:
+    """Return the customer's last active ticket (with messages). If none is active, create one,
+    or return null when `create` is false."""
+    body = body or ActiveSessionRequest()
+    return ask_service.active_session(conn, body.customer_id, create=body.create)
+
+
+@router.post("/sessions/new", response_model=SessionResponse, tags=["sessions"])
+def new_session(body: CustomerRequest | None = None, conn=Depends(get_db)) -> SessionResponse:
+    """Open a new ticket as the active one; the previous active ticket goes on hold."""
+    return ask_service.new_session(conn, _customer(body))
 
 
 @router.get("/sessions/{session_id}", response_model=SessionResponse, tags=["sessions"])
