@@ -192,3 +192,24 @@ class SessionSummary(BaseModel):
     last_active_at: str
     question_count: int
     first_question: str | None
+
+
+class DailyStats(BaseModel):
+    day: str = Field(description="UTC day, YYYY-MM-DD")
+    page_views: int
+    unique_visitors: int = Field(description="Distinct visitors that day (hashed IPs; no raw IPs stored)")
+    questions: int
+    cost_usd: float
+
+
+class StatsTotals(BaseModel):
+    page_views: int
+    visitor_days: int = Field(description="Sum of daily unique visitors over the window")
+    questions: int
+    cost_usd: float
+
+
+class StatsResponse(BaseModel):
+    days: int
+    totals: StatsTotals
+    daily: list[DailyStats]

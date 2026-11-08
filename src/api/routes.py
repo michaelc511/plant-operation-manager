@@ -23,11 +23,13 @@ from api.schemas import (
     SessionResponse,
     SessionSummary,
     SourceInfo,
+    StatsResponse,
 )
 from rag.llm import LLMUnavailableError, MissingAPIKeyError
 from services import ask as ask_service
 from services import documents
 from services import limits
+from services import visits
 from services.session_agent import SessionCustomerMismatchError
 
 router = APIRouter()
@@ -171,3 +173,15 @@ def resume_session(session_id: str = Path(pattern=ID_PATTERN), body: CustomerReq
                    conn=Depends(get_db)) -> SessionResponse:
     """Make an earlier session the active one again (closes the current one)."""
     return _session_action(ask_service.resume_session, conn, body, session_id)
+
+
+@router.post("/visit", status_code=204, tags=["stats"])
+def visit(conn=Depends(get_db), ip: str = Depends(client_ip)) -> None:
+    """Count one page load (sent once by the UI on load). Stores a daily hash, never the IP."""
+    visits.record_visit(conn, ip)
+
+
+@router.get("/stats", response_model=StatsResponse, tags=["stats"])
+def stats(days: int = Query(default=30, ge=1, le=365), conn=Depends(get_db)) -> StatsResponse:
+    """Per-day page views, unique visitors, questions and OpenAI cost (aggregates only)."""
+    return StatsResponse(**visits.stats(conn, days))

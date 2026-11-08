@@ -84,6 +84,10 @@ export function App() {
   }
 
   useEffect(() => {
+    api.visit().catch(() => undefined); // visitor count only; never blocks the app
+  }, []);
+
+  useEffect(() => {
     api
       .health()
       .then(setHealth)

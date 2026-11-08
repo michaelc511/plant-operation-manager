@@ -193,6 +193,17 @@ Smoke-run 5 golden questions against the live URL (same questions as `evaluation
 safety PPE, HP-400 torque, evacuation point, failed-part handling, and the out-of-scope case.
 Each should match its local answer and citations.
 
+## See usage
+
+| What | Web | Terminal |
+|---|---|---|
+| Visitors, questions, cost per day | https://<app>.fly.dev/stats.html | `curl -s https://<app>.fly.dev/api/stats` |
+| Requests, response codes, memory | Fly app page → **Metrics** | `fly logs` (live) |
+| Machine running or stopped | Fly app page | `fly status` |
+| OpenAI spend | platform.openai.com/usage (pick the project) | — |
+
+Unique visitors are counted per day from a salted hash of the IP; no IP addresses are stored.
+
 ## Redeploy after changes
 
 ```bash
