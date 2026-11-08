@@ -86,7 +86,7 @@ Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (quer
   (`src/services/redact.py`) before questions and answers are saved to session history.
 
 #### 9. Testing & evaluation
-- **98 automated tests** (78 backend + 20 frontend), all mocked, so they run without an API key.
+- **104 automated tests** (84 backend + 20 frontend), all mocked, so they run without an API key.
 - **Answer eval** (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.
 - **Retrieval eval** (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.
 - About **3 seconds** and **$0.001** per answer (median 2.9 s, average $0.0013).
@@ -104,10 +104,13 @@ Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (quer
 - **Data minimization:** session history is redacted before storage; keys stay server-side in `.env`.
 - **Testing before release:** CI runs all mocked tests on every push; real-API answer and
   retrieval evals measure accuracy before changes are trusted.
+- **Usage limits (cost control):** a daily OpenAI budget cap (`DAILY_BUDGET_USD`, default $1),
+  per-visitor rate limits (5 questions a minute, 50 a day) and re-indexing switched off in the
+  deployed app (`src/services/limits.py`).
 
 **Planned before a wider rollout (not built yet)**
 - Login and roles (supervisor vs. document owner), with per-user audit.
-- Rate limiting and input moderation.
+- Input moderation.
 - A written AI-use policy and model card (intended use, limits, owners, review cadence).
 - An eval gate in CI that blocks merges if accuracy drops.
 
@@ -186,8 +189,9 @@ python tools/scripts/ask.py          # interactive mode; :quit to exit
 | Red dot / "Can't reach the server" | Terminal 1 isn't running |
 | "Document index isn't built yet" | Run step 3 |
 
-More detail: [`docs/runbooks/mobile-app.md`](docs/runbooks/mobile-app.md) (web and phone) and
-[`docs/runbooks/cli.md`](docs/runbooks/cli.md) (command line).
+More detail: [`docs/runbooks/mobile-app.md`](docs/runbooks/mobile-app.md) (web and phone),
+[`docs/runbooks/cli.md`](docs/runbooks/cli.md) (command line) and
+[`docs/runbooks/deploy-fly.md`](docs/runbooks/deploy-fly.md) (deploy to Fly.io).
 
 ---
 

@@ -30,6 +30,13 @@ def _no_demo_tickets(monkeypatch):
     """Tests start from an empty sessions table; test_sessions.py covers the demo seed itself."""
     monkeypatch.setenv("DEMO_TICKETS", "0")
     monkeypatch.delenv("SESSION_IDLE_MINUTES", raising=False)
+    # usage limits off unless a test turns them on (tests/test_limits.py)
+    for name in ("RATE_LIMIT_PER_MINUTE", "RATE_LIMIT_PER_DAY", "DAILY_BUDGET_USD"):
+        monkeypatch.setenv(name, "0")
+    monkeypatch.delenv("ALLOW_INGEST", raising=False)
+    from services import limits
+
+    limits.reset()
 
 
 @pytest.fixture

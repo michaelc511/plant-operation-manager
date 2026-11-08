@@ -17,6 +17,7 @@ export class ApiError extends Error {
 
 const FRIENDLY: Record<number, string> = {
   0: "Can't reach the server. Check your Wi-Fi and that the plant assistant is running.",
+  429: "Too many questions right now. Please try again shortly.",
   500: "The server hit an error. Please try again.",
   502: "The assistant's server isn't responding. Ask IT to check that the API is running.",
   504: "The assistant took too long to answer. Please try again.",

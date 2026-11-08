@@ -1,0 +1,41 @@
+# Fly.io config. `fly launch --no-deploy` offers to copy this; change app/region there if needed.
+# Full steps: docs/runbooks/deploy-fly.md
+app = "plant-operation-manager"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # Usage limits (services/limits.py). Override with `fly secrets set NAME=value`.
+  DAILY_BUDGET_USD = "1.00"
+  RATE_LIMIT_PER_MINUTE = "5"
+  RATE_LIMIT_PER_DAY = "50"
+  ALLOW_INGEST = "0"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 25
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+
+[mounts]
+  source = "pom_data"
+  destination = "/data"
+
+[[vm]]
+  memory = "1gb"
+  cpus = 1

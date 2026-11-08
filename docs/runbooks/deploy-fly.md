@@ -19,20 +19,32 @@ Where things live in production:
 
 ---
 
-## Step 0: Prep the project (code changes, done once before the first deploy)
+## Step 0: Prep the project (done, 2026-11-08)
 
-Fly uses the project's own `Dockerfile` (the current one is a scaffold stub). These changes make
-the app run as one container:
+Already in the repo and tested in a local container (fresh volume, real OpenAI key):
 
-- [ ] **Dockerfile (multi-stage):** stage 1 `node:20-slim` runs `npm ci && npm run build` in
-      `frontend/`; stage 2 `python:3.12-slim` installs `requirements.txt`, copies `src/`,
-      `tools/`, `data/chroma/` and `frontend/dist`, and starts
+- [x] **`Dockerfile` (multi-stage):** stage 1 `node:20-slim` builds the React app; stage 2
+      `python:3.12-slim` installs `requirements.txt`, copies `src/`, `tools/`, `data/chroma/`
+      and `frontend/dist`, sets `ALLOW_INGEST=0`, and starts
       `uvicorn main:app --app-dir src --host 0.0.0.0 --port 8000`.
-- [ ] **`src/main.py`:** serve the API under `/api` (the UI already calls `/api/...`; locally the
-      Vite proxy strips it) and serve `frontend/dist` at `/` with an `index.html` fallback.
-      Local `npm run dev` keeps working.
-- [ ] **`.dockerignore`:** finish the list (Step 2).
-- [ ] **Tests pass:** `pytest` and `cd frontend && npx vitest run`.
+- [x] **`src/main.py`:** API at `/` and `/api`; the built UI served at `/`. Local `npm run dev`
+      still works.
+- [x] **Usage limits** (`src/services/limits.py`, set in `fly.toml` `[env]`): daily OpenAI budget
+      `DAILY_BUDGET_USD=1.00` (about 500 questions a day), `RATE_LIMIT_PER_MINUTE=5` and
+      `RATE_LIMIT_PER_DAY=50` per visitor (by `Fly-Client-IP`), `ALLOW_INGEST=0`. Over a limit:
+      HTTP 429 with a clear message; ingest off: HTTP 403.
+- [x] **`.dockerignore`** and **`fly.toml`** written (Steps 2 and 3).
+- [x] **Tests pass:** `pytest` (84) and `cd frontend && npx vitest run` (20).
+
+Test the container locally any time (needs Docker Desktop):
+
+```bash
+docker build -t pom-local .
+mkdir -p /tmp/pomvol
+docker run --rm --env-file .env -e DATABASE_URL=sqlite:////data/app.db \
+  -v /tmp/pomvol:/data -p 8001:8000 pom-local
+# then open http://localhost:8001
+```
 
 ---
 
@@ -46,7 +58,7 @@ fly auth whoami       # confirm
 
 ## Step 2: Check `.dockerignore` (security and image size)
 
-`.dockerignore` in the project root must contain:
+Already written. `.dockerignore` in the project root contains:
 
 ```
 # secrets
@@ -96,31 +108,10 @@ Prompts:
 3. **Region:** closest to you, e.g. `sjc` (San Jose) or `sfo`.
 4. **Postgres / Redis / Tigris:** **No** (SQLite and Chroma are local).
 
-Then edit the generated `fly.toml` so it contains:
-
-```toml
-[http_service]
-  internal_port = 8000
-  force_https = true
-  auto_stop_machines = "stop"     # sleeps when idle: lower cost, cold start ~ a few seconds
-  auto_start_machines = true
-  min_machines_running = 0
-
-  [[http_service.checks]]
-    method = "GET"
-    path = "/api/health"
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "20s"
-
-[mounts]
-  source = "pom_data"
-  destination = "/data"
-
-[[vm]]
-  memory = "1gb"                  # Chroma + LangGraph can run out of memory at 256 MB
-  cpus = 1
-```
+`fly.toml` is already in the repo (app `plant-operation-manager`, region `sjc`, `/api/health`
+check, auto-stop, the `pom_data` volume at `/data`, 1 GB memory, the usage limits). When
+`fly launch` asks whether to copy the existing configuration, answer **yes**. If you pick a
+different app name or region, it updates `fly.toml`; use that region in Step 4.
 
 ## Step 4: Create the volume (persistent SQLite)
 
@@ -146,9 +137,10 @@ fly secrets list      # shows names only, never values
 
 `sqlite:////data/app.db` (four slashes) is the absolute path on the volume.
 
-**Before going public, cap spending:** set a monthly budget limit on the OpenAI project that owns
-this key (platform.openai.com → Settings → Limits). The app has no login yet, so anyone with the
-URL can ask questions on your key. See "Before sharing the link" below.
+**Spending layers:** the app's daily cap (`DAILY_BUDGET_USD`, $1 a day) and per-visitor limits,
+then the OpenAI project budget (platform.openai.com → project → Limits; done: $50 a month), then
+the prepaid credit balance with auto-recharge off. To change the daily cap:
+`fly secrets set DAILY_BUDGET_USD=1.50`.
 
 ## Step 6: Deploy
 
@@ -213,9 +205,9 @@ Tickets and the audit log stay on the volume. Rebuild the index locally
 
 ## Before sharing the link (required for a public URL)
 
-The deployed app has **no login or rate limit** (Phase 8, F21/S21: Required when deployed
-publicly). Until that's built:
-- Keep the OpenAI spending limit from Step 5.
+The deployed app has **rate limits and a daily budget cap but no login** (Phase 8, F21/S21: the
+auth part is still to build for a wider rollout). For a demo:
+- Keep the OpenAI project budget from Step 5.
 - Share the URL only with reviewers, and stop the app when the demo is over:
   `fly scale count 0` (start again with `fly scale count 1`).
 
@@ -228,4 +220,6 @@ publicly). Until that's built:
 | "Document index isn't built yet" | `data/chroma/` missing from the image: check `.dockerignore` and the Dockerfile `COPY` |
 | Machine restarts, `Out of memory` in logs | `fly scale memory 1024` |
 | Tickets reset after a deploy | `[mounts]` missing in `fly.toml` or volume in another region |
-| `insufficient_quota` / `429` | OpenAI budget limit reached: raise it or wait |
+| `429` "Too many questions" | Per-visitor limit (5 a minute, 50 a day): wait, or raise `RATE_LIMIT_PER_MINUTE` / `RATE_LIMIT_PER_DAY` |
+| `429` "daily question limit" | `DAILY_BUDGET_USD` reached: resets at midnight UTC, or raise it |
+| `insufficient_quota` from OpenAI | OpenAI project budget or credit reached: raise it or wait |
