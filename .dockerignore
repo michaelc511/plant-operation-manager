@@ -1,5 +1,32 @@
+# secrets
 .env
-.git
+.env.*
+!.env.example
+secrets/
+
+# Python / Node build leftovers
 venv/
-node_modules/
+.venv/
 __pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# local data that must NOT ship (tickets, question log); data/chroma/ DOES ship
+data/app.db
+*.db
+*.db-journal
+
+# not needed at runtime
+.git/
+.github/
+.claude/
+CLAUDE.md
+demo-and-requirements/
+evaluation/
+docs/
+tests/
+README.html
+.DS_Store

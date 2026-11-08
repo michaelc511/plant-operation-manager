@@ -138,7 +138,7 @@ unsupported claims, and withholds any answer with no valid citation.</li>
 </ul>
 <h4>9. Testing &amp; evaluation</h4>
 <ul>
-<li><strong>98 automated tests</strong> (78 backend + 20 frontend), all mocked, so they run without an API key.</li>
+<li><strong>104 automated tests</strong> (84 backend + 20 frontend), all mocked, so they run without an API key.</li>
 <li><strong>Answer eval</strong> (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.</li>
 <li><strong>Retrieval eval</strong> (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.</li>
 <li>About <strong>3 seconds</strong> and <strong>$0.001</strong> per answer (median 2.9 s, average $0.0013).</li>
@@ -157,11 +157,14 @@ set in one place (<code>CHAT_MODEL</code>, <code>EMBEDDING_MODEL</code>).</li>
 <li><strong>Data minimization:</strong> session history is redacted before storage; keys stay server-side in <code>.env</code>.</li>
 <li><strong>Testing before release:</strong> CI runs all mocked tests on every push; real-API answer and
 retrieval evals measure accuracy before changes are trusted.</li>
+<li><strong>Usage limits (cost control):</strong> a daily OpenAI budget cap (<code>DAILY_BUDGET_USD</code>, default $1),
+per-visitor rate limits (5 questions a minute, 50 a day) and re-indexing switched off in the
+deployed app (<code>src/services/limits.py</code>).</li>
 </ul>
 <p><strong>Planned before a wider rollout (not built yet)</strong></p>
 <ul>
 <li>Login and roles (supervisor vs. document owner), with per-user audit.</li>
-<li>Rate limiting and input moderation.</li>
+<li>Input moderation.</li>
 <li>A written AI-use policy and model card (intended use, limits, owners, review cadence).</li>
 <li>An eval gate in CI that blocks merges if accuracy drops.</li>
 </ul>
@@ -255,8 +258,9 @@ python tools/scripts/ask.py          # interactive mode; :quit to exit
 </tr>
 </tbody>
 </table>
-<p>More detail: <a href="docs/runbooks/mobile-app.md"><code>docs/runbooks/mobile-app.md</code></a> (web and phone) and
-<a href="docs/runbooks/cli.md"><code>docs/runbooks/cli.md</code></a> (command line).</p>
+<p>More detail: <a href="docs/runbooks/mobile-app.md"><code>docs/runbooks/mobile-app.md</code></a> (web and phone),
+<a href="docs/runbooks/cli.md"><code>docs/runbooks/cli.md</code></a> (command line) and
+<a href="docs/runbooks/deploy-fly.md"><code>docs/runbooks/deploy-fly.md</code></a> (deploy to Fly.io).</p>
 <hr />
 <h2 id="about-the-project">About the project</h2>
 <p>A question-answering assistant for manufacturing floor supervisors. A supervisor asks a question

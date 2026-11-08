@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from agents.base import AgentNotConfiguredError, NotConfiguredAgent
-from api.deps import get_agent, get_db, get_llm, get_store
+from api.deps import client_ip, get_agent, get_db, get_llm, get_store
 from api.schemas import (
     ActiveSessionRequest,
     CustomerRequest,
@@ -27,6 +27,7 @@ from api.schemas import (
 from rag.llm import LLMUnavailableError, MissingAPIKeyError
 from services import ask as ask_service
 from services import documents
+from services import limits
 from services.session_agent import SessionCustomerMismatchError
 
 router = APIRouter()
@@ -34,6 +35,15 @@ router = APIRouter()
 
 def _llm_unavailable(exc: Exception) -> HTTPException:
     return HTTPException(status_code=503, detail=str(exc))
+
+
+def _check_limits(ip: str, conn) -> None:
+    """Paid calls (OpenAI) only: per-visitor rate limit, then the daily budget. 429 if over."""
+    try:
+        limits.check_rate(ip)
+        limits.check_budget(conn)
+    except (limits.RateLimitedError, limits.BudgetExceededError) as exc:
+        raise HTTPException(status_code=429, detail=str(exc))
 
 
 @router.get("/health", response_model=HealthResponse, tags=["system"])
@@ -53,13 +63,19 @@ def list_sources(store=Depends(get_store)) -> list[SourceInfo]:
 @router.post("/sources/ingest", response_model=IngestResponse, tags=["sources"])
 def ingest(body: IngestRequest, llm=Depends(get_llm), store=Depends(get_store)) -> IngestResponse:
     try:
+        limits.check_ingest()
+    except limits.IngestDisabledError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    try:
         return documents.ingest_sources(body.sources, llm, store)
     except (MissingAPIKeyError, LLMUnavailableError) as exc:
         raise _llm_unavailable(exc)
 
 
 @router.post("/search", response_model=SearchResponse, tags=["retrieval"])
-def search(body: SearchRequest, llm=Depends(get_llm), store=Depends(get_store)) -> SearchResponse:
+def search(body: SearchRequest, llm=Depends(get_llm), store=Depends(get_store), conn=Depends(get_db),
+           ip: str = Depends(client_ip)) -> SearchResponse:
+    _check_limits(ip, conn)
     try:
         return documents.search_documents(body.question, body.sources, body.k, llm, store)
     except (MissingAPIKeyError, LLMUnavailableError) as exc:
@@ -67,7 +83,9 @@ def search(body: SearchRequest, llm=Depends(get_llm), store=Depends(get_store)) 
 
 
 @router.post("/ask", response_model=AskResponse, tags=["answers"])
-def ask(body: AskRequest, agent=Depends(get_agent), conn=Depends(get_db)) -> AskResponse:
+def ask(body: AskRequest, agent=Depends(get_agent), conn=Depends(get_db),
+        ip: str = Depends(client_ip)) -> AskResponse:
+    _check_limits(ip, conn)
     try:
         return ask_service.ask(body.question, agent, conn, session_id=body.session_id,
                                customer_id=body.customer_id)
