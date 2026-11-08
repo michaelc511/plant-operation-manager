@@ -70,6 +70,13 @@ npm run preview             # serves dist/ on http://<computer-ip>:4173 with the
 | "The document index isn't built yet" | Run `python tools/scripts/ingest_docs.py` |
 | `OPENAI_API_KEY is not set` in an answer | Add the key to the project's `.env` and restart the backend |
 
+## Guardrails and AI governance
+- The app declines out-of-scope questions, says "not found" instead of guessing, and always
+  includes safety procedures for risky tasks.
+- Answers are advisory: read the **Check before acting** box and the cited sources before acting.
+- Every answer and 👍/👎 is saved to the audit log (`queries`); keys, emails and phone numbers
+  are redacted before session history is stored.
+
 ## Security note
 `npm run dev:phone` exposes the app to everyone on the local network, with no login. Use it on
 a trusted network only; add authentication before any wider rollout.

@@ -12,7 +12,7 @@ Everything for reviewing the solution is in [`demo-and-requirements/`](demo-and-
 | [`3-video_demo.mp4`](demo-and-requirements/3-video_demo.mp4) | **Video demo** of the app in use (41 s). **▶ Watch on YouTube: [https://youtu.be/tHMchK9PRGY](https://youtu.be/tHMchK9PRGY)**, or download the MP4 |
 | [`AI Solution Prototype Challenge.pdf`](demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf) | **Requirements**: the original challenge brief |
 
-### SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, AND SAFETY
+### SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, SAFETY, GUARDRAILS AND AI GOVERNANCE
 
 ```
 React + TypeScript (Vite)   →  FastAPI  →  LangGraph orchestrator
@@ -66,19 +66,43 @@ Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (quer
 - **Ask** screen with cited answer cards and feedback. **History** screen with resumable sessions.
 - Calls FastAPI through a `/api` proxy, so the browser never talks to OpenAI directly.
 
-#### 8. Safety & security guardrails
+#### 8. AI guardrails (safety & security)
 - **Safety first:** risky tasks (lockout, guards, chemicals) always pull in safety procedures,
   and the supervisor gets a warning if an answer cites no safety source.
 - **Prompt-injection guardrails:** questions and document text are treated as data, not
   instructions. A test attempt to override the rules was correctly refused.
 - **API keys stay server-side** in `.env`, never in code or the browser.
 - **No guessing:** out-of-scope questions are declined, and anything the documents don't cover gets "not found".
+- **Grounded-answer checks:** code drops citations to passages that weren't retrieved, flags
+  unsupported claims, and withholds any answer with no valid citation.
+- **Privacy guardrail:** API keys, tokens, emails and phone numbers are redacted
+  (`src/services/redact.py`) before questions and answers are saved to session history.
 
 #### 9. Testing & evaluation
 - **91 automated tests** (72 backend + 19 frontend), all mocked, so they run without an API key.
 - **Answer eval** (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.
 - **Retrieval eval** (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.
 - About **3 seconds** and **$0.001** per answer (median 2.9 s, average $0.0013).
+
+#### 10. AI governance
+**In place today**
+- **Audit trail:** every answer is logged in the `queries` table with its routes, citations,
+  flags, confidence, cost and 👍/👎 feedback, so any answer can be traced and reviewed later.
+- **Human in the loop:** answers are advisory. The supervisor decides, sees a **Check before
+  acting** box for flags, and the app never takes actions (no work orders or quality holds).
+- **Controlled sources:** answers come only from three controlled plant documents (EHS-SOP-001,
+  MM-100, QC-STD-200), each cited by document, section and page.
+- **Versioned prompts and models:** agent prompts live in `tools/prompts/` under git; models are
+  set in one place (`CHAT_MODEL`, `EMBEDDING_MODEL`).
+- **Data minimization:** session history is redacted before storage; keys stay server-side in `.env`.
+- **Testing before release:** CI runs all mocked tests on every push; real-API answer and
+  retrieval evals measure accuracy before changes are trusted.
+
+**Planned before a wider rollout (not built yet)**
+- Login and roles (supervisor vs. document owner), with per-user audit.
+- Rate limiting and input moderation.
+- A written AI-use policy and model card (intended use, limits, owners, review cadence).
+- An eval gate in CI that blocks merges if accuracy drops.
 
 ### Run the app
 You need Python 3.10+ (3.11 recommended), Node.js 18+ and your own OpenAI API key.
@@ -225,6 +249,11 @@ Fictional sample documents for development live in `docs/`: `safety_procedures.p
 - **Speed:** answers within a few seconds, usable on a shop-floor tablet.
 - **Traceability:** every answer can be traced back to the passages it used.
 - **Secrets:** API keys come from environment variables only (see `.env.example`).
+- **Guardrails:** stay in scope, answer only from cited evidence, always include safety
+  procedures for risky tasks, ignore instructions hidden in questions or documents, and redact
+  personal data before storage.
+- **AI governance:** every answer is logged and auditable, humans make the final call, prompts
+  and models are versioned, and quality is measured by tests and evals before release.
 - **Testability:** unit tests run fully mocked with no API key. Real-API checks live in
   `evaluation/`.
 
