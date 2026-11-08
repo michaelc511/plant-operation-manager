@@ -55,6 +55,12 @@ python tools/scripts/ask.py --json "Where is the evacuation assembly point?"
 | **Check before acting** | Flags: unsupported claims, missing safety citation, widened search |
 | Last line | Tokens, cost, time and model |
 
+## Guardrails and AI governance
+The CLI runs the same agents and guardrails as the web app: scope checks, cited answers only,
+safety sources for risky tasks, and prompt-injection rules. Answers are advisory; check flags
+and sources before acting. Note that the CLI does not write to the SQLite audit log; use the
+API or web app when answers must be traceable.
+
 ## Sample questions
 - `What PPE do I need to clean the solvent tank?` (safety)
 - `What's the acceptable diameter tolerance for part A-102?` (quality)

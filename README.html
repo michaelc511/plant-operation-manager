@@ -58,7 +58,7 @@ hr{border:0;border-top:1px solid var(--border);margin:32px 0}
 </tr>
 </tbody>
 </table>
-<h3 id="solution-architecture-for-accuracy-security-and-safety">SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, AND SAFETY</h3>
+<h3 id="solution-architecture-for-accuracy-security-safety-guardrails-and-ai-governance">SOLUTION ARCHITECTURE FOR ACCURACY, SECURITY, SAFETY, GUARDRAILS AND AI GOVERNANCE</h3>
 <pre><code>React + TypeScript (Vite)   →  FastAPI  →  LangGraph orchestrator
                                               ├─ Router agent      (gpt-4.1-mini)
                                               ├─ Retrieval agent   (hybrid: Chroma vectors + BM25)
@@ -116,7 +116,7 @@ clarification. Risky tasks always include safety procedures.</li>
 <li><strong>Ask</strong> screen with cited answer cards and feedback. <strong>History</strong> screen with resumable sessions.</li>
 <li>Calls FastAPI through a <code>/api</code> proxy, so the browser never talks to OpenAI directly.</li>
 </ul>
-<h4>8. Safety &amp; security guardrails</h4>
+<h4>8. AI guardrails (safety &amp; security)</h4>
 <ul>
 <li><strong>Safety first:</strong> risky tasks (lockout, guards, chemicals) always pull in safety procedures,
 and the supervisor gets a warning if an answer cites no safety source.</li>
@@ -124,6 +124,10 @@ and the supervisor gets a warning if an answer cites no safety source.</li>
 instructions. A test attempt to override the rules was correctly refused.</li>
 <li><strong>API keys stay server-side</strong> in <code>.env</code>, never in code or the browser.</li>
 <li><strong>No guessing:</strong> out-of-scope questions are declined, and anything the documents don't cover gets &quot;not found&quot;.</li>
+<li><strong>Grounded-answer checks:</strong> code drops citations to passages that weren't retrieved, flags
+unsupported claims, and withholds any answer with no valid citation.</li>
+<li><strong>Privacy guardrail:</strong> API keys, tokens, emails and phone numbers are redacted
+(<code>src/services/redact.py</code>) before questions and answers are saved to session history.</li>
 </ul>
 <h4>9. Testing &amp; evaluation</h4>
 <ul>
@@ -131,6 +135,28 @@ instructions. A test attempt to override the rules was correctly refused.</li>
 <li><strong>Answer eval</strong> (18 questions, real API): 100% correct routing, citations and declines, and 17/18 pass overall.</li>
 <li><strong>Retrieval eval</strong> (32 questions): hybrid search finds the right section 100% of the time vs 94% for vector-only, and ranks it first 91% vs 78%.</li>
 <li>About <strong>3 seconds</strong> and <strong>$0.001</strong> per answer (median 2.9 s, average $0.0013).</li>
+</ul>
+<h4>10. AI governance</h4>
+<p><strong>In place today</strong></p>
+<ul>
+<li><strong>Audit trail:</strong> every answer is logged in the <code>queries</code> table with its routes, citations,
+flags, confidence, cost and 👍/👎 feedback, so any answer can be traced and reviewed later.</li>
+<li><strong>Human in the loop:</strong> answers are advisory. The supervisor decides, sees a <strong>Check before
+acting</strong> box for flags, and the app never takes actions (no work orders or quality holds).</li>
+<li><strong>Controlled sources:</strong> answers come only from three controlled plant documents (EHS-SOP-001,
+MM-100, QC-STD-200), each cited by document, section and page.</li>
+<li><strong>Versioned prompts and models:</strong> agent prompts live in <code>tools/prompts/</code> under git; models are
+set in one place (<code>CHAT_MODEL</code>, <code>EMBEDDING_MODEL</code>).</li>
+<li><strong>Data minimization:</strong> session history is redacted before storage; keys stay server-side in <code>.env</code>.</li>
+<li><strong>Testing before release:</strong> CI runs all mocked tests on every push; real-API answer and
+retrieval evals measure accuracy before changes are trusted.</li>
+</ul>
+<p><strong>Planned before a wider rollout (not built yet)</strong></p>
+<ul>
+<li>Login and roles (supervisor vs. document owner), with per-user audit.</li>
+<li>Rate limiting and input moderation.</li>
+<li>A written AI-use policy and model card (intended use, limits, owners, review cadence).</li>
+<li>An eval gate in CI that blocks merges if accuracy drops.</li>
 </ul>
 <h3 id="run-the-app">Run the app</h3>
 <p>You need Python 3.10+ (3.11 recommended), Node.js 18+ and your own OpenAI API key.</p>
@@ -144,7 +170,7 @@ cd frontend &amp;&amp; npm install &amp;&amp; cd ..
 <p>The app reads keys only from a local <code>.env</code> file in the project root. It's in <code>.gitignore</code>, so
 it's never committed, and keys never reach the browser.</p>
 <ol>
-<li>Create an API key at <a href="https://platform.openai.com/api-keys">https://platform.openai.com/api-keys</a>. Your OpenAI account needs billing
+<li>Create an API key at https://platform.openai.com/api-keys. Your OpenAI account needs billing
 enabled. A typical question costs about $0.001–0.002.</li>
 <li>Copy the template and open it in an editor:<pre><code class="language-bash">cp .env.example .env
 </code></pre>
@@ -326,6 +352,11 @@ each source can be updated on its own.</li>
 <li><strong>Speed:</strong> answers within a few seconds, usable on a shop-floor tablet.</li>
 <li><strong>Traceability:</strong> every answer can be traced back to the passages it used.</li>
 <li><strong>Secrets:</strong> API keys come from environment variables only (see <code>.env.example</code>).</li>
+<li><strong>Guardrails:</strong> stay in scope, answer only from cited evidence, always include safety
+procedures for risky tasks, ignore instructions hidden in questions or documents, and redact
+personal data before storage.</li>
+<li><strong>AI governance:</strong> every answer is logged and auditable, humans make the final call, prompts
+and models are versioned, and quality is measured by tests and evals before release.</li>
 <li><strong>Testability:</strong> unit tests run fully mocked with no API key. Real-API checks live in
 <code>evaluation/</code>.</li>
 </ul>
@@ -406,22 +437,22 @@ FE-400-10) that embeddings miss. Set <code>RETRIEVAL_MODE=vector</code> to compa
 <tr>
 <td>FastAPI backend</td>
 <td><code>uvicorn main:app --reload --app-dir src</code></td>
-<td><a href="http://localhost:8000">http://localhost:8000</a> (docs at <code>/docs</code>)</td>
+<td>http://localhost:8000 (docs at <code>/docs</code>)</td>
 </tr>
 <tr>
 <td>Streamlit UI</td>
 <td><code>streamlit run app.py</code> (path TBD)</td>
-<td><a href="http://localhost:8501">http://localhost:8501</a></td>
+<td>http://localhost:8501</td>
 </tr>
 <tr>
 <td>Gradio UI</td>
 <td><code>python app.py</code> (path TBD)</td>
-<td><a href="http://localhost:7860">http://localhost:7860</a></td>
+<td>http://localhost:7860</td>
 </tr>
 <tr>
 <td>React UI (mobile-friendly)</td>
 <td><code>cd frontend &amp;&amp; npm run dev</code> (<code>npm run dev:phone</code> for phones on the same Wi-Fi)</td>
-<td><a href="http://localhost:5173">http://localhost:5173</a></td>
+<td>http://localhost:5173</td>
 </tr>
 </tbody>
 </table>
