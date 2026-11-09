@@ -53,7 +53,16 @@ export function AnswerCard({ data, initialHelpful = null }: Props) {
                   </strong>{" "}
                   {c.section_title}
                   <span className="source-sub">
-                    {c.title} · {pages(c.page_start, c.page_end)}
+                    {c.title} · {pages(c.page_start, c.page_end)} ·{" "}
+                    <a
+                      className="pdf-link"
+                      href={api.pdfUrl(c.source, c.page_start)}
+                      target="_blank"
+                      rel="noopener"
+                      aria-label={`Open ${c.doc_no} PDF at page ${c.page_start}`}
+                    >
+                      Open PDF
+                    </a>
                   </span>
                 </span>
               </li>

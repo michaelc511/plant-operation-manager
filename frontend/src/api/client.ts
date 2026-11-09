@@ -49,6 +49,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => request<Health>("/health"),
+  // Source PDF opened at a page (most browsers honor #page=N).
+  pdfUrl: (source: string, page?: number) =>
+    `${BASE}/sources/${encodeURIComponent(source)}/pdf${page ? `#page=${page}` : ""}`,
   // One page-load ping for visitor counts (no body; the server stores a daily hash, never the IP).
   visit: () => fetch(`${BASE}/visit`, { method: "POST" }).then(() => undefined),
   ask: (question: string, session?: { sessionId?: string | null; customerId?: string }) =>

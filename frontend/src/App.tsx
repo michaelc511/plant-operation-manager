@@ -136,16 +136,21 @@ export function App() {
         <div className="brand">
           <span className="logo" aria-hidden="true" />
           <div>
-            <h1>Plant Docs Assistant</h1>
+            <h1>Ops Now</h1>
             <p>Safety · Maintenance · Quality</p>
           </div>
         </div>
-        <span
-          className={`health-dot ${health && !notReady ? "ok" : notReady ? "bad" : ""}`}
-          role="img"
-          aria-label={health && !notReady ? "Connected" : notReady ? "Not connected" : "Checking connection"}
-          title={notReady ?? (health ? "Connected" : "Checking…")}
-        />
+        <div className="top-actions">
+          <a className="home-link" href="/home">
+            ← Home
+          </a>
+          <span
+            className={`health-dot ${health && !notReady ? "ok" : notReady ? "bad" : ""}`}
+            role="img"
+            aria-label={health && !notReady ? "Connected" : notReady ? "Not connected" : "Checking connection"}
+            title={notReady ?? (health ? "Connected" : "Checking…")}
+          />
+        </div>
       </header>
 
       <nav className="tabs" role="tablist">

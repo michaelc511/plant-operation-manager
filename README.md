@@ -4,7 +4,8 @@
 
 ## Live demo and video
 
-- 🚀 **Live demo:** [https://plant-operation-manager.fly.dev](https://plant-operation-manager.fly.dev) (opens as demo user Carl Wayne; no setup needed)
+- 🏠 **Home (Ops Now):** [https://plant-operation-manager.fly.dev/home](https://plant-operation-manager.fly.dev/home) (what it does, the 3 source PDFs, sample questions and a quick-ask chat in the corner)
+- 🚀 **Live demo (full chat):** [https://plant-operation-manager.fly.dev](https://plant-operation-manager.fly.dev) (opens as demo user Carl Wayne; no setup needed)
 - 📊 **Usage:** [https://plant-operation-manager.fly.dev/stats.html](https://plant-operation-manager.fly.dev/stats.html) (page views, unique visitors, questions and OpenAI cost per day)
 - 🎬 **Video demo (1 min 15 s):** [https://www.youtube.com/watch?v=WV960Ni4jfc](https://www.youtube.com/watch?v=WV960Ni4jfc)
 - 📋 **Requirements:** [the original challenge brief (PDF)](demo-and-requirements/AI%20Solution%20Prototype%20Challenge.pdf)
