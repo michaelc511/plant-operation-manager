@@ -126,3 +126,19 @@ def test_missing_api_key_returns_503(make_client, monkeypatch):
         app.dependency_overrides[deps.get_llm] = lambda: LLMClient()
         r = c.post("/search", json={"question": "what PPE for PW-1?"})
     assert r.status_code == 503 and "OPENAI_API_KEY" in r.json()["detail"]
+
+
+def test_source_pdf_opens_inline(make_client):
+    with make_client(ingested=False) as c:
+        r = c.get("/api/sources/maintenance/pdf")
+        assert r.status_code == 200
+        assert r.headers["content-type"] == "application/pdf"
+        assert r.headers["content-disposition"].startswith("inline")
+        assert "maintenance_manual.pdf" in r.headers["content-disposition"]
+        assert r.content[:4] == b"%PDF"
+
+
+def test_source_pdf_unknown_or_bad_key(make_client):
+    with make_client(ingested=False) as c:
+        assert c.get("/sources/nope/pdf").status_code == 404
+        assert c.get("/sources/..%2F.env/pdf").status_code in (404, 422)

@@ -8,6 +8,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -46,4 +47,14 @@ app.include_router(router, prefix="/api", include_in_schema=False)
 # Serve the built UI when it exists (Docker image, or after `npm run build`). Mounted last, so
 # API routes and /docs win; html=True serves index.html at /.
 if (FRONTEND_DIST / "index.html").exists():
+    # The React chat is the default page (/ and /chat); the static "Ops Now" home page is /home.
+    @app.get("/chat", include_in_schema=False)
+    def chat() -> FileResponse:
+        return FileResponse(FRONTEND_DIST / "index.html")
+
+    if (FRONTEND_DIST / "home.html").exists():
+        @app.get("/home", include_in_schema=False)
+        def home() -> FileResponse:
+            return FileResponse(FRONTEND_DIST / "home.html")
+
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="ui")

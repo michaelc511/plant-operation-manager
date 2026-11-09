@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi.responses import FileResponse
 
 from agents.base import AgentNotConfiguredError, NotConfiguredAgent
 from api.deps import client_ip, get_agent, get_db, get_llm, get_store
@@ -25,6 +26,7 @@ from api.schemas import (
     SourceInfo,
     StatsResponse,
 )
+from rag.config import SOURCES
 from rag.llm import LLMUnavailableError, MissingAPIKeyError
 from services import ask as ask_service
 from services import documents
@@ -60,6 +62,16 @@ def health(store=Depends(get_store), agent=Depends(get_agent)) -> HealthResponse
 @router.get("/sources", response_model=list[SourceInfo], tags=["sources"])
 def list_sources(store=Depends(get_store)) -> list[SourceInfo]:
     return documents.list_sources(store)
+
+
+@router.get("/sources/{key}/pdf", tags=["sources"], response_class=FileResponse)
+def source_pdf(key: str = Path(pattern=r"^[a-z]+$")) -> FileResponse:
+    """The source document itself, opened inline (cite links add #page=N)."""
+    source = SOURCES.get(key)
+    if source is None or not source.path.is_file():
+        raise HTTPException(status_code=404, detail="Document not found.")
+    return FileResponse(source.path, media_type="application/pdf", filename=source.filename,
+                        content_disposition_type="inline")
 
 
 @router.post("/sources/ingest", response_model=IngestResponse, tags=["sources"])

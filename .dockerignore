@@ -27,6 +27,7 @@ CLAUDE.md
 demo-and-requirements/
 evaluation/
 docs/
+!docs/*.pdf
 tests/
 README.html
 .DS_Store

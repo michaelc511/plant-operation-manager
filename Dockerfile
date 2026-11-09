@@ -24,6 +24,8 @@ COPY src/ src/
 COPY tools/ tools/
 # Pre-built Chroma index (read at runtime; rebuild locally with tools/scripts/ingest_docs.py)
 COPY data/chroma/ data/chroma/
+# The 3 source PDFs, served at /api/sources/{key}/pdf for downloads and cite links
+COPY docs/*.pdf docs/
 COPY --from=web /web/dist frontend/dist
 
 # SQLite lives on the Fly volume: DATABASE_URL=sqlite:////data/app.db (set as a Fly secret)

@@ -90,6 +90,8 @@ describe("App", () => {
     const sources = within(card).getByRole("region", { name: "Sources" });
     expect(within(sources).getByText("MM-100 §4.1")).toBeTruthy();
     expect(within(sources).getByText(/pp\. 3-4/)).toBeTruthy();
+    const pdf = within(sources).getAllByRole("link", { name: /PDF at page/ })[0];
+    expect(pdf.getAttribute("href")).toMatch(/^\/api\/sources\/\w+\/pdf#page=\d+$/);
     expect(within(card).getByRole("region", { name: "Check before acting" })).toBeTruthy();
   });
 
