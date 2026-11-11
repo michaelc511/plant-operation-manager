@@ -12,6 +12,8 @@ import os
 from dataclasses import dataclass
 from typing import Literal
 
+from langsmith import traceable
+
 from .keyword_index import BM25Index
 from .vector_store import VectorStore
 
@@ -44,6 +46,21 @@ class Hit:
                 "matched_by": self.matched_by}
 
 
+def _trace_inputs(inputs: dict) -> dict:
+    """LangSmith: show what was searched, not the 1,536-number vector or the searcher object."""
+    return {k: inputs.get(k) for k in ("source", "question", "k", "min_vector_score")}
+
+
+def _trace_outputs(outputs) -> dict:
+    """LangSmith: show hits as documents (text, source, page, scores) in the retriever view."""
+    hits = outputs.get("output", outputs) if isinstance(outputs, dict) else outputs
+    return {"documents": [
+        {"type": "Document", "page_content": h.text,
+         "metadata": {**h.metadata, "chunk_id": h.id, "score": h.score, "matched_by": h.matched_by}}
+        for h in hits
+    ]}
+
+
 class HybridSearcher:
     def __init__(self, store: VectorStore, mode: Mode = RETRIEVAL_MODE):
         self.store = store
@@ -63,6 +80,7 @@ class HybridSearcher:
         self._indexes[source] = (version, index, docs)
         return index, docs
 
+    @traceable(run_type="retriever", name="hybrid_search", process_inputs=_trace_inputs, process_outputs=_trace_outputs)
     def search(self, source: str, question: str, vector: list[float], k: int, min_vector_score: float = 0.0) -> list[Hit]:
         vec_hits = [h for h in self.store.query(source, vector, CANDIDATES) if h["score"] >= min_vector_score]
         if self.mode == "vector":

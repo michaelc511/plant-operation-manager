@@ -133,6 +133,9 @@ Embeddings: text-embedding-3-small  ·  Vector DB: Chroma  ·  SQL: SQLite (quer
   MM-100, QC-STD-200), each cited by document, section and page.
 - **Versioned prompts and models:** agent prompts live in `tools/prompts/` under git; models are
   set in one place (`CHAT_MODEL`, `EMBEDDING_MODEL`).
+- **Tracing (LangSmith):** with `LANGSMITH_TRACING` on, each question is one `plant-question` trace
+  tagged by model, prompt version and `env:prod`/`env:local`, showing every OpenAI call (model,
+  tokens, cost) and one `hybrid_search` step per source. Off by default; the app runs the same without it.
 - **Data minimization:** session history is redacted before storage; keys stay server-side in `.env`.
 - **Testing before release:** CI runs all mocked tests on every push; real-API answer and
   retrieval evals measure accuracy before changes are trusted.
