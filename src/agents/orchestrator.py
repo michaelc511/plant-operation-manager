@@ -13,6 +13,8 @@ The orchestrator's decisions are plain code (no LLM call), so they are cheap and
 
 from __future__ import annotations
 
+import os
+
 from langgraph.graph import END, START, StateGraph
 
 from agents.base import AgentResult
@@ -20,7 +22,7 @@ from agents.retrieval import RetrievalAgent
 from agents.router import RouterAgent
 from agents.state import SOURCE_ORDER, GraphState
 from agents.verifier import VerifierAgent
-from rag.llm import LLMClient
+from rag.llm import CHAT_MODEL, LLMClient
 from rag.vector_store import VectorStore
 
 OUT_OF_SCOPE_TEXT = (
@@ -28,6 +30,20 @@ OUT_OF_SCOPE_TEXT = (
     "maintenance manuals and quality control standards). Please ask your supervisor or the right department."
 )
 NO_EVIDENCE_TEXT = "I couldn't find this in the plant documentation."
+
+RUN_NAME = "plant-question"  # LangSmith run name, instead of the default "LangGraph"
+PROMPT_VERSION = "v1"  # bump when the router or verifier prompts change, to compare traces by version
+
+
+def trace_config() -> dict:
+    """LangSmith run name, tags and metadata. Fly sets FLY_APP_NAME, so that means prod.
+    Plain config: with tracing off, LangGraph ignores it."""
+    env = "prod" if os.getenv("FLY_APP_NAME") else "local"
+    return {
+        "run_name": RUN_NAME,
+        "tags": [f"model:{CHAT_MODEL}", f"prompt:{PROMPT_VERSION}", f"env:{env}"],
+        "metadata": {"model": CHAT_MODEL, "prompt_version": PROMPT_VERSION, "env": env},
+    }
 
 
 def _finish(state: GraphState, **result) -> dict:
@@ -104,7 +120,7 @@ class PlantQAAgent:
 
     def run(self, question: str) -> AgentResult:
         state = self.graph.invoke({"question": question, "trace": [], "tokens": 0, "cost_usd": 0.0},
-                                  {"recursion_limit": 20})
+                                  {"recursion_limit": 20, **trace_config()})
         f = state["final"]
         return AgentResult(
             status=f["status"], routes=f["routes"], answer=f["answer"], citations=f["citations"],

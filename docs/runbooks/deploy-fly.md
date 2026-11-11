@@ -126,14 +126,19 @@ one machine (Step 6 uses `--ha=false`).
 
 ## Step 5: Set only the secrets the app uses
 
-Don't pipe the whole `.env`: it also holds keys the app doesn't use (Tavily, LangSmith, debug
-flags). Set just these two, without typing the key on the command line:
+Don't pipe the whole `.env`: it also holds keys the app doesn't use (Tavily, debug flags). Set
+just these, without typing a key on the command line:
 
 ```bash
 grep '^OPENAI_API_KEY=' .env | fly secrets import --stage
 fly secrets set DATABASE_URL=sqlite:////data/app.db --stage
+grep -E '^LANGSMITH_(API_KEY|PROJECT|TRACING)=' .env | fly secrets import --stage   # LangSmith tracing
 fly secrets list      # shows names only, never values
 ```
+
+**LangSmith (optional):** with the three `LANGSMITH_*` secrets set, every question on Fly becomes a
+`plant-question` trace tagged `env:prod`, with the OpenAI calls (model, tokens, cost) and one
+`hybrid_search` step per source. Without them the app runs the same, just untraced.
 
 `sqlite:////data/app.db` (four slashes) is the absolute path on the volume.
 

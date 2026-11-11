@@ -19,6 +19,17 @@ CHAT_PRICE_PER_M = {  # (input, output)
 }
 
 
+def _traced(client):
+    """LangSmith: every chat call becomes an LLM run with model, prompts, tokens and cost.
+    A no-op unless LANGSMITH_TRACING is on; tracing problems never block the OpenAI call."""
+    try:
+        from langsmith.wrappers import wrap_openai
+
+        return wrap_openai(client)
+    except Exception:
+        return client
+
+
 class MissingAPIKeyError(RuntimeError):
     pass
 
@@ -68,7 +79,7 @@ class LLMClient:
                 )
             from openai import OpenAI
 
-            self._client = OpenAI()
+            self._client = _traced(OpenAI())
         return self._client
 
     def embed(self, texts: list[str], batch_size: int = 100) -> EmbeddingResult:
